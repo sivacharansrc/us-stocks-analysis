@@ -54,4 +54,28 @@ else:
     ### Updating the local input_file
     stock_data.to_csv(input_file, index=False)
 
-stock_data.head()
+### Best month to sell the stocks
+
+temp = stock_data[['High', 'Stock', 'Year', 'Month']]
+temp['Rank'] = temp.groupby(['Stock', 'Year'])['High'].rank(method='dense', ascending=False).copy()
+temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Year', 'Rank'], ascending=False).copy()
+temp = temp.pivot_table(index=['Stock', 'Month'], aggfunc={'Year': 'count'}).reset_index()
+temp['Rank'] = temp.groupby(['Stock'])['Year'].rank(method='dense', ascending=False).copy()
+temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Rank'], ascending=True).copy()
+months_to_sell = temp.groupby(['Stock'])['Month'].apply('-'.join).reset_index()
+
+### Best Months to buy the stocks
+
+temp = stock_data[['Low', 'Stock', 'Year', 'Month']]
+temp['Rank'] = temp.groupby(['Stock', 'Year'])['Low'].rank(method='dense', ascending=True).copy()
+temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Year', 'Rank'], ascending=True).copy()
+temp = temp.pivot_table(index=['Stock', 'Month'], aggfunc={'Year': 'count'}).reset_index()
+temp['Rank'] = temp.groupby(['Stock'])['Year'].rank(method='dense', ascending=False).copy()
+temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Rank'], ascending=True).copy()
+months_to_buy = temp.groupby(['Stock'])['Month'].apply('-'.join).reset_index()
+
+### Average Growth Per Year
+
+temp = stock_data[['Stock', 'Year', 'Close', 'Month']].loc[stock_data['Month']=="Dec"].copy()
+temp['Lagged Close'] = temp.sort_values(by=['Stock', 'Year']).groupby(by=['Stock'])['Close'].shift(1)
+temp['Growth %'] = (temp['Close'] - temp['Lagged Close']) / temp['Lagged Close']
