@@ -5,13 +5,14 @@
 import yfinance as yf
 import pandas as pd
 from datetime import datetime
+import numpy as np
 
 
 # Reading the input file
 
 import os
-input_file = os.getcwd()
-input_file = input_file + "\\us-stocks-analysis\\input\\stocks_data.csv"
+path = os.getcwd()
+input_file = path + "\\us-stocks-analysis\\input\\stocks_data.csv"
 
 # Getting information on the input file
 input_mtime = os.path.getmtime(input_file)
@@ -78,4 +79,8 @@ months_to_buy = temp.groupby(['Stock'])['Month'].apply('-'.join).reset_index()
 
 temp = stock_data[['Stock', 'Year', 'Close', 'Month']].loc[stock_data['Month']=="Dec"].copy()
 temp['Lagged Close'] = temp.sort_values(by=['Stock', 'Year']).groupby(by=['Stock'])['Close'].shift(1)
-temp['Growth %'] = (temp['Close'] - temp['Lagged Close']) / temp['Lagged Close']
+temp['Avg Yearly Growth'] = (temp['Close'] - temp['Lagged Close']) / temp['Lagged Close']
+avg_yearly_growth = temp.groupby('Stock')['Avg Yearly Growth'].mean().reset_index()
+temp['Growth Probability'] = np.where(np.isnan(temp['Avg Yearly Growth']), np.NaN, np.where(temp['Avg Yearly Growth'] > 0,1,-1))
+growth_tendency = (temp.groupby('Stock')['Growth Probability'].sum() / (temp.groupby('Stock')['Growth Probability'].count() - 1)).reset_index()
+growth_metrics = pd.merge(avg_yearly_growth, growth_tendency, how="inner")
