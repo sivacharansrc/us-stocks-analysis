@@ -91,4 +91,11 @@ temp['Growth Probability'] = np.where(np.isnan(temp['Avg Yearly Growth']), np.Na
 growth_tendency = (temp.groupby('Stock')['Growth Probability'].sum() / (temp.groupby('Stock')['Growth Probability'].count() - 1)).reset_index()
 growth_metrics = pd.merge(avg_yearly_growth, growth_tendency, how="inner")
 
+### GETTING OTHER STOCK INFORMATION
 
+file_names = ['nasdaq_stock_list.csv','nyse_stock_list.csv','amex_stock_list.csv']
+for market in file_names:
+    ### READ DATA AND ASSOCIATE THE MARKET INFO WITHIN THE FILE
+    stock_info = pd.read_csv(path + "\\us-stocks-analysis\\input\\" + market)
+    stock_info = stock_info[['Symbol', 'Name', 'Sector', 'industry']][stock_info['Symbol'].isin(stock_list)]
+stock_info
