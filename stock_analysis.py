@@ -60,6 +60,7 @@ else:
     ### CREATE OR OVERWRITE THE STOCK DATA INPUT FILE
     stock_data.to_csv(input_file, index=False)
 
+
 ### TOP MONTHS TO SELL THE STOCK
 
 temp = stock_data[['High', 'Stock', 'Year', 'Month']]
@@ -89,4 +90,5 @@ avg_yearly_growth = temp.groupby('Stock')['Avg Yearly Growth'].mean().reset_inde
 temp['Growth Probability'] = np.where(np.isnan(temp['Avg Yearly Growth']), np.NaN, np.where(temp['Avg Yearly Growth'] > 0,1,-1))
 growth_tendency = (temp.groupby('Stock')['Growth Probability'].sum() / (temp.groupby('Stock')['Growth Probability'].count() - 1)).reset_index()
 growth_metrics = pd.merge(avg_yearly_growth, growth_tendency, how="inner")
+
 
