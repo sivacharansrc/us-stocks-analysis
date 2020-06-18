@@ -82,8 +82,8 @@ months_to_buy = temp.groupby(['Stock'])['Month'].apply('-'.join).reset_index()
 
 ### GENERATE GROWTH METRICS FOR THE STOCKS
 
-temp = stock_data[['Stock', 'Year', 'Close', 'Month']].loc[stock_data['Month']=="Dec"].copy()
-temp['Lagged Close'] = temp.sort_values(by=['Stock', 'Year']).groupby(by=['Stock'])['Close'].shift(1)
+temp = stock_data[['Stock', 'Year', 'Close', 'Month']].loc[stock_data['Month']=="Dec"].sort_values(by=['Stock', 'Year']).reset_index().copy()
+temp['Lagged Close'] = temp.groupby(by=['Stock'])['Close'].shift(1)
 temp['Avg Yearly Growth'] = (temp['Close'] - temp['Lagged Close']) / temp['Lagged Close']
 avg_yearly_growth = temp.groupby('Stock')['Avg Yearly Growth'].mean().reset_index()
 temp['Growth Probability'] = np.where(np.isnan(temp['Avg Yearly Growth']), np.NaN, np.where(temp['Avg Yearly Growth'] > 0,1,-1))
