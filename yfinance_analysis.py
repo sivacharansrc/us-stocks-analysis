@@ -22,10 +22,10 @@ msft.financials
 msft.quarterly_financials
 
 # show major holders
-stock.major_holders
+msft.major_holders
 
 # show institutional holders
-stock.institutional_holders
+msft.institutional_holders
 
 # show balance heet
 msft.balance_sheet

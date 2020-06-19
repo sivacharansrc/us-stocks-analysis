@@ -13,6 +13,8 @@ import os
 
 path = os.getcwd()
 input_file = path + "\\us-stocks-analysis\\input\\stocks_data.csv"
+dividends_file = path + "\\us-stocks-analysis\\input\\dividends_data.csv"
+splits_file = path + "\\us-stocks-analysis\\input\\splits_data.csv"
 
 ### CHECK IF STOCK DATA INPUT FILE EXISTS AND GET THE FILE MODIFIED TIME
 if os.path.exists(input_file):
@@ -50,6 +52,7 @@ else:
             stock_data = stock_info
         else:
             stock_data = pd.concat([stock_data, stock_info])
+    stock_data = stock_data[stock_data['Open'].notnull()]
 
     ### CREATING ADDITIONAL COLUMNS
 
@@ -88,8 +91,78 @@ temp['Lagged Close'] = temp.groupby(by=['Stock'])['Close'].shift(1)
 temp['Avg Yearly Growth'] = (temp['Close'] - temp['Lagged Close']) / temp['Lagged Close']
 avg_yearly_growth = temp.groupby('Stock')['Avg Yearly Growth'].mean().reset_index()
 temp['Growth Probability'] = np.where(np.isnan(temp['Avg Yearly Growth']), np.NaN, np.where(temp['Avg Yearly Growth'] > 0,1,-1))
-growth_tendency = (temp.groupby('Stock')['Growth Probability'].sum() / (temp.groupby('Stock')['Growth Probability'].count() - 1)).reset_index()
+growth_tendency = (temp.groupby('Stock')['Growth Probability'].sum() / (temp.groupby('Stock')['Growth Probability'].count())).reset_index()
 growth_metrics = pd.merge(avg_yearly_growth, growth_tendency, how="inner")
+
+### CALCULATING DIVIDENDS ACCUMULATED IN A YEAR
+
+### GETTING THE DIVIDEND INFORMATION
+
+if ((m_month == curr_month) & (m_year == curr_year)):
+    dividends_data = pd.read_csv(dividends_file)
+    splits_data = pd.read_csv(splits_file)
+else:   
+    ### Creating necessary variables for data creation
+    actions_data = pd.DataFrame()
+    
+    for stocks in stock_list:
+        actions_info = yf.Ticker(stocks)
+        actions_info = actions_info.actions.reset_index()
+        actions_info['Stock'] = stocks
+        
+        # PERFORM FURTHER STEPS DEPENDING ON THE EXISTENSE OF ACTIONS_DATA
+        if actions_data.shape[0] == 0:
+            actions_data = actions_info
+        else:
+            actions_data = pd.concat([actions_data, actions_info])
+    
+    ### CREATING ADDITIONAL COLUMNS
+
+    actions_data['Year'] = actions_data['Date'].dt.year
+    actions_data['Month'] = actions_data['Date'].dt.month_name().str.slice(stop=3)
+    actions_data = actions_data[(actions_data['Year'] >= int(start_date[0:4])) & (actions_data['Year'] <= int(end_date[0:4]))]
+
+    ### SEPERATING DIVIDENDS AND SPLITS DATA
+
+    dividends_data = actions_data.groupby(['Stock', 'Year','Month'])['Dividends'].sum().reset_index()
+    dividends_data = dividends_data[(dividends_data['Dividends'] != 0) & (dividends_data['Year'] >= (int(start_date[0:4]) +11))] # RETAINING ONLY 11 YEARS DIVIDEND DATA
+
+    splits_data = actions_data.groupby(['Stock', 'Year','Month'])['Stock Splits'].sum().reset_index()
+    splits_data = splits_data[splits_data['Stock Splits'] != 0]
+
+    ### CREATE OR OVERWRITE THE STOCK DATA INPUT FILE
+    dividends_data.to_csv(dividends_file, index=False)
+    splits_data.to_csv(splits_file, index=False)
+
+# dividends_data = pd.read_csv(dividends_file)
+
+dividends_data = dividends_data.groupby(by=['Stock', 'Year'])['Dividends'].sum().reset_index()
+dividends_data = pd.merge(dividends_data, stock_data[['Stock', 'Year','Close']][stock_data['Month'] == "Dec"], how="left", on=['Stock', 'Year'])
+dividends_data['Dividend PCT'] = dividends_data['Dividends'] / dividends_data['Close']
+dividends_data['Weight'] = dividends_data.groupby('Stock')['Year'].rank(method='dense', ascending=True).copy()
+
+### CALCULATING 10 YR DIVIDEND YIELD
+avg_annual_dividend_pct = dividends_data.groupby('Stock').apply(lambda x: np.average(x['Dividend PCT'], weights=x['Weight'])).reset_index()
+avg_annual_dividend_pct.columns = ['Stock','10 Year Avg Dividend Yield']
+
+### CALCULATING DIVIDEND GROWTH AND GROWTH TENDENCY
+dividends_data['Lagged Dividend'] = dividends_data.groupby(by=['Stock'])['Dividends'].shift(1)
+dividends_data['Dividend Avg Yearly Growth'] = (dividends_data['Dividends'] - dividends_data['Lagged Dividend']) / dividends_data['Lagged Dividend']
+avg_yearly_growth = dividends_data.groupby('Stock')['Dividend Avg Yearly Growth'].mean().reset_index()
+dividends_data['Dividend Growth Probability'] = np.where(np.isnan(dividends_data['Dividend Avg Yearly Growth']), np.NaN, np.where(dividends_data['Dividend Avg Yearly Growth'] > 0,1,-1))
+growth_tendency = (dividends_data.groupby('Stock')['Dividend Growth Probability'].sum() / (dividends_data.groupby('Stock')['Dividend Growth Probability'].count())).reset_index()
+dividend_metrics = pd.merge(avg_annual_dividend_pct, avg_yearly_growth, how='inner', on='Stock')
+dividend_metrics = pd.merge(dividend_metrics, growth_tendency, how='inner', on='Stock')
+
+### OTHER THINGS TO DO
+
+# HOW VOLATILE IS THE STOCK WITHIN A MONTH AND WITHIN A YEAR - USE LAST 5 YEARS DAILY DATA
+# HOW MUCH DIVIDEND ACCUMULATED ANNUALLY (%)
+# AVERAGE NUMBER OF SPLITS PAST 20 YEARS? THE MORE THE SPLIT, THE MORE THE GROWTH OF COMPANY (LESS WEIGHTAGE)
+# HOW DOES THE STOCK COMPARE TO THE SECTOR AVERAGE
+# CALCULATE THE SMALL, MID, AND LARGE CAP
+# FINALLY CREATE RANKING BY SECTOR, CAP, GENERAL RANKING
+
 
 ### GETTING OTHER STOCK INFORMATION
 
