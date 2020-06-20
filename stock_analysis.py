@@ -7,6 +7,7 @@ import pandas as pd
 from datetime import datetime
 import numpy as np
 import os
+import dplython as dp
 
 
 # GENERATING THE PATH OF THE INPUT STOCK DATA FILE
@@ -15,6 +16,7 @@ path = os.getcwd()
 input_file = path + "\\us-stocks-analysis\\input\\stocks_data.csv"
 dividends_file = path + "\\us-stocks-analysis\\input\\dividends_data.csv"
 splits_file = path + "\\us-stocks-analysis\\input\\splits_data.csv"
+last_day_file = path + "\\us-stocks-analysis\\input\\last_day_data.csv"
 
 ### CHECK IF STOCK DATA INPUT FILE EXISTS AND GET THE FILE MODIFIED TIME
 if os.path.exists(input_file):
@@ -154,6 +156,46 @@ growth_tendency = (dividends_data.groupby('Stock')['Dividend Growth Probability'
 dividend_metrics = pd.merge(avg_annual_dividend_pct, avg_yearly_growth, how='inner', on='Stock')
 dividend_metrics = pd.merge(dividend_metrics, growth_tendency, how='inner', on='Stock')
 
+### CALCULATING THE STOCK SPLITS
+splits_data = splits_data.groupby('Stock')['Year'].count().reset_index()
+splits_data.columns = ['Stock', 'Splits Per 2 Decades']
+
+### PULL THE LAST DAY'S DATA
+
+if ((m_month == curr_month) & (m_year == curr_year)):
+    last_day_data = pd.read_csv(last_day_file)
+else:   
+    ### Creating necessary variables for data creation
+    last_day_data = pd.DataFrame()
+    
+    for stocks in stock_list:
+        stock_info = yf.Ticker(stocks)
+        stock_info = stock_info.history(period="1y", interval= "1wk").reset_index()
+        stock_info['Stock'] = stocks
+        
+        # PERFORM FURTHER STEPS DEPENDING ON THE EXISTENSE OF STOCK_DATA
+        if last_day_data.shape[0] == 0:
+            last_day_data = stock_info
+        else:
+            last_day_data = pd.concat([last_day_data, stock_info])
+    last_day_data = last_day_data[last_day_data['Open'].notnull()]
+
+    ### CREATING ADDITIONAL COLUMNS
+
+    last_day_data['Year'] = last_day_data['Date'].dt.year
+    last_day_data['Month'] = last_day_data['Date'].dt.month_name().str.slice(stop=3)
+    #last_day_data = last_day_data[last_day_data['Date'].dt.day == 1]
+
+    ### CREATE OR OVERWRITE THE STOCK DATA INPUT FILE
+    #stock_data.to_csv(input_file, index=False)
+
+last_day_data.head(50)
+
+52_week_high = last_day_data.groupby('Stock')['High'].max()
+
+last_day_data['52 Week High'] = last_day_data.groupby('Stock').assign(WeekHigh = lambda x: x.High.max())         ['High'].agg({'Col Mean':"mean"})    
+last_day_data['52 Week Low'] = last_day_data.groupby('Stock')['Low'].min()
+last_day_data['52 Week Avg'] = (last_day_data.groupby('Stock')['Open'].mean() + last_day_data.groupby('Stock')['Close'].mean()) / 2
 ### OTHER THINGS TO DO
 
 # HOW VOLATILE IS THE STOCK WITHIN A MONTH AND WITHIN A YEAR - USE LAST 5 YEARS DAILY DATA
