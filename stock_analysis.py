@@ -17,6 +17,27 @@ input_file = path + "\\us-stocks-analysis\\input\\stocks_data.csv"
 dividends_file = path + "\\us-stocks-analysis\\input\\dividends_data.csv"
 splits_file = path + "\\us-stocks-analysis\\input\\splits_data.csv"
 last_day_file = path + "\\us-stocks-analysis\\input\\last_day_data.csv"
+amex_file = path+"\\us-stocks-analysis\\input\\amex_stock_list.csv"
+nasdaq_file = path+"\\us-stocks-analysis\\input\\nasdaq_stock_list.csv"
+nyse_file = path+"\\us-stocks-analysis\\input\\nyse_stock_list.csv"
+
+### PREPARING THE STOCK BASE LIST
+
+amex_stock_data = pd.read_csv(amex_file)
+amex_stock_data['Market'] = 'AMEX'
+nasdaq_stock_data = pd.read_csv(nasdaq_file)
+nasdaq_stock_data['Market'] = 'NASDAQ'
+nyse_stock_data = pd.read_csv(nyse_file)
+nyse_stock_data['Market'] = 'NYSE'
+
+complete_stock_data = pd.concat([amex_stock_data, nasdaq_stock_data, nyse_stock_data])[['Symbol', 'Name', 'MarketCap', 'IPOyear', 'Sector', 'industry', 'Market']]
+complete_stock_data = complete_stock_data[complete_stock_data['Sector'].notnull()]
+complete_stock_data.columns = ['Stock', 'Name', 'Market Capitalization', 'IPO Year', 'Sector', 'Industry', 'Market']
+complete_stock_data = complete_stock_data[['Stock', 'Name', 'Market', 'Market Capitalization', 'IPO Year', 'Sector', 'Industry']]
+complete_stock_data['Stock'] = complete_stock_data['Stock'].str.strip()
+
+### GENERATING THE COMPLETE STOCK LIST
+complete_stock_list = complete_stock_data['Stock'].tolist()
 
 ### CHECK IF STOCK DATA INPUT FILE EXISTS AND GET THE FILE MODIFIED TIME
 if os.path.exists(input_file):
@@ -170,7 +191,7 @@ else:
     
     for stocks in stock_list:
         stock_info = yf.Ticker(stocks)
-        stock_info = stock_info.history(period="1y", interval= "1wk").reset_index()
+        stock_info = stock_info.history(period="1y", interval= "1d").reset_index()
         stock_info['Stock'] = stocks
         
         # PERFORM FURTHER STEPS DEPENDING ON THE EXISTENSE OF STOCK_DATA
@@ -187,15 +208,33 @@ else:
     #last_day_data = last_day_data[last_day_data['Date'].dt.day == 1]
 
     ### CREATE OR OVERWRITE THE STOCK DATA INPUT FILE
-    #stock_data.to_csv(input_file, index=False)
+    last_day_data.to_csv(last_day_file, index=False)
 
-last_day_data.head(50)
+last_day_data.head()
+### GENERATING THE 52 WEEK METRICS
 
-52_week_high = last_day_data.groupby('Stock')['High'].max()
+last_day_data['52 Week High'] = last_day_data.groupby('Stock')['High'].transform('max')
+last_day_data['52 Week Low'] = last_day_data.groupby('Stock')['Low'].transform('min')
+last_day_data['52 Week Mean'] = (last_day_data.groupby('Stock')['Open'].transform('mean') + last_day_data.groupby('Stock')['Close'].transform('mean')) / 2
+last_day_data['52 Week Median'] = (last_day_data.groupby('Stock')['Open'].transform('median') + last_day_data.groupby('Stock')['Close'].transform('median')) / 2
+fifty_two_week_metric = last_day_data[['Stock', '52 Week High', '52 Week Low', '52 Week Mean', '52 Week Median']].drop_duplicates()
 
-last_day_data['52 Week High'] = last_day_data.groupby('Stock').assign(WeekHigh = lambda x: x.High.max())         ['High'].agg({'Col Mean':"mean"})    
-last_day_data['52 Week Low'] = last_day_data.groupby('Stock')['Low'].min()
-last_day_data['52 Week Avg'] = (last_day_data.groupby('Stock')['Open'].mean() + last_day_data.groupby('Stock')['Close'].mean()) / 2
+### CALCULATING VOLATILITY OF THE STOCK 
+last_day_data['Daily Mean'] = (last_day_data['Open'] + last_day_data['Close']) / 2
+yearly_volatility = last_day_data.groupby('Stock')['Daily Mean'].std().reset_index()
+yearly_volatility.columns = ['Stock', 'Yearly Volatility']
+
+monthly_volatility = last_day_data.groupby(['Stock','Year','Month'])['Daily Mean'].std().reset_index().groupby('Stock')['Daily Mean'].mean().reset_index()
+monthly_volatility.columns = ['Stock', 'Monthly Volatility']
+
+volatility_metrics = pd.merge(yearly_volatility, monthly_volatility, on='Stock', how="inner")
+
+### STITCHING ALL THE METRICS
+
+base_data = complete_stock_data[complete_stock_data['Stock'].isin(last_day_data['Stock'])]
+
+### BRINING IN THE 52 WEEK METRICS
+
 ### OTHER THINGS TO DO
 
 # HOW VOLATILE IS THE STOCK WITHIN A MONTH AND WITHIN A YEAR - USE LAST 5 YEARS DAILY DATA
@@ -214,3 +253,5 @@ for market in file_names:
     stock_info = pd.read_csv(path + "\\us-stocks-analysis\\input\\" + market)
     stock_info = stock_info[['Symbol', 'Name', 'Sector', 'industry']][stock_info['Symbol'].isin(stock_list)]
 stock_info
+
+last_day_data >> dp.group_by(X.Stock) >> dp.mutate(X.YrHigh = X.High.max()) 
