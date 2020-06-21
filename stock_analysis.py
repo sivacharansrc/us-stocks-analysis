@@ -7,7 +7,7 @@ import pandas as pd
 from datetime import datetime
 import numpy as np
 import os
-import dplython as dp
+
 
 
 # GENERATING THE PATH OF THE INPUT STOCK DATA FILE
@@ -56,6 +56,7 @@ curr_year = datetime.today().year
 ### READING (OR UPDATING INPUT FILE)
 ### CREATING LIST OF STOCK SYMBOLS OF INTEREST
 stock_list = ["AMZN", "MSFT", "AAPL", "BAC", "WFC", "KO", "AXP", "JPM", "USB", "T", "COST", "EPD", "HON", "BAYRY"]
+#stock_list = complete_stock_list
 
 if ((m_month == curr_month) & (m_year == curr_year)):
     stock_data = pd.read_csv(input_file)
@@ -90,12 +91,13 @@ else:
 ### TOP MONTHS TO SELL THE STOCK
 
 temp = stock_data[['High', 'Stock', 'Year', 'Month']]
-temp['Rank'] = temp.groupby(['Stock', 'Year'])['High'].rank(method='dense', ascending=False).copy()
-temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Year', 'Rank'], ascending=False).copy()
+temp['Rank'] = temp.groupby(['Stock', 'Year'])['High'].rank(method='dense', ascending=False)
+temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Year', 'Rank'], ascending=False)
 temp = temp.pivot_table(index=['Stock', 'Month'], aggfunc={'Year': 'count'}).reset_index()
 temp['Rank'] = temp.groupby(['Stock'])['Year'].rank(method='dense', ascending=False).copy()
 temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Rank'], ascending=True).copy()
 months_to_sell = temp.groupby(['Stock'])['Month'].apply('-'.join).reset_index()
+months_to_sell.columns = ['Stock', 'Months to Sell']
 
 ### TOP MONTHS TO BUY THE STOCKS
 
@@ -106,6 +108,7 @@ temp = temp.pivot_table(index=['Stock', 'Month'], aggfunc={'Year': 'count'}).res
 temp['Rank'] = temp.groupby(['Stock'])['Year'].rank(method='dense', ascending=False).copy()
 temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Rank'], ascending=True).copy()
 months_to_buy = temp.groupby(['Stock'])['Month'].apply('-'.join).reset_index()
+months_to_buy.columns = ['Stock', 'Months to Buy']
 
 ### GENERATE GROWTH METRICS FOR THE STOCKS
 
@@ -229,11 +232,31 @@ monthly_volatility.columns = ['Stock', 'Monthly Volatility']
 
 volatility_metrics = pd.merge(yearly_volatility, monthly_volatility, on='Stock', how="inner")
 
+### GENERATING THE LAST DAY PRICES
+
+date_filter = last_day_data.Date.max()
+curr_day_prices = last_day_data[last_day_data['Date']==date_filter][['Stock', 'Open', 'High', 'Low', 'Close']]
+
 ### STITCHING ALL THE METRICS
 
 base_data = complete_stock_data[complete_stock_data['Stock'].isin(last_day_data['Stock'])]
 
-### BRINING IN THE 52 WEEK METRICS
+### BRINGING IN ALL PREVIOUSLY GENERATED METRICS
+summary_file = pd.merge(base_data, curr_day_prices, on='Stock', how='inner')
+summary_file = pd.merge(summary_file, months_to_sell, on='Stock', how='inner')
+summary_file = pd.merge(summary_file, months_to_buy, on='Stock', how='inner')
+summary_file = pd.merge(summary_file, growth_metrics, on='Stock', how='inner')
+summary_file = pd.merge(summary_file, dividend_metrics, on='Stock', how='inner')
+summary_file = pd.merge(summary_file, splits_data, on='Stock', how='inner')
+summary_file = pd.merge(summary_file, volatility_metrics, on='Stock', how='inner')
+summary_file = pd.merge(summary_file, fifty_two_week_metric, on='Stock', how='inner')
+
+summary_file.head()
+
+### WRITING THE FINAL DATA
+stock_summary_file = path + "\\us-stocks-analysis\\input\\stock_summary_file.xlsx"
+# summary_file.to_csv(stock_summary_file, index=False)
+summary_file.to_excel(stock_summary_file, header=True, index=False, sheet_name='Stock Summary')
 
 ### OTHER THINGS TO DO
 
@@ -243,15 +266,3 @@ base_data = complete_stock_data[complete_stock_data['Stock'].isin(last_day_data[
 # HOW DOES THE STOCK COMPARE TO THE SECTOR AVERAGE
 # CALCULATE THE SMALL, MID, AND LARGE CAP
 # FINALLY CREATE RANKING BY SECTOR, CAP, GENERAL RANKING
-
-
-### GETTING OTHER STOCK INFORMATION
-
-file_names = ['nasdaq_stock_list.csv','nyse_stock_list.csv','amex_stock_list.csv']
-for market in file_names:
-    ### READ DATA AND ASSOCIATE THE MARKET INFO WITHIN THE FILE
-    stock_info = pd.read_csv(path + "\\us-stocks-analysis\\input\\" + market)
-    stock_info = stock_info[['Symbol', 'Name', 'Sector', 'industry']][stock_info['Symbol'].isin(stock_list)]
-stock_info
-
-last_day_data >> dp.group_by(X.Stock) >> dp.mutate(X.YrHigh = X.High.max()) 
