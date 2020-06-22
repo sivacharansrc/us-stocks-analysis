@@ -13,7 +13,7 @@ import os
 # GENERATING THE PATH OF THE INPUT STOCK DATA FILE
 
 path = os.getcwd()
-input_file = path + "\\us-stocks-analysis\\input\\stocks_data.csv"
+stock_price_data_file = path + "\\us-stocks-analysis\\input\\stock_price_data.csv"
 dividends_file = path + "\\us-stocks-analysis\\input\\dividends_data.csv"
 splits_file = path + "\\us-stocks-analysis\\input\\splits_data.csv"
 last_day_file = path + "\\us-stocks-analysis\\input\\last_day_data.csv"
@@ -40,9 +40,9 @@ complete_stock_data['Stock'] = complete_stock_data['Stock'].str.strip()
 complete_stock_list = complete_stock_data['Stock'].tolist()
 
 ### CHECK IF STOCK DATA INPUT FILE EXISTS AND GET THE FILE MODIFIED TIME
-if os.path.exists(input_file):
+if os.path.exists(stock_price_data_file):
     # Getting information on the input file
-    input_mtime = os.path.getmtime(input_file)
+    input_mtime = os.path.getmtime(stock_price_data_file)
     m_month = datetime.fromtimestamp(input_mtime).date().month
     m_year = datetime.fromtimestamp(input_mtime).date().year
 else:
@@ -59,14 +59,14 @@ stock_list = ["AMZN", "MSFT", "AAPL", "BAC", "WFC", "KO", "AXP", "JPM", "USB", "
 #stock_list = complete_stock_list
 
 if ((m_month == curr_month) & (m_year == curr_year)):
-    stock_data = pd.read_csv(input_file)
+    stock_data = pd.read_csv(stock_price_data_file)
 else:   
     ### Creating necessary variables for data creation
     stock_data = pd.DataFrame()
     start_date = str(datetime.today().year - 21) + "-01-01"
     end_date = str(datetime.today().year - 1) + "-12-31"
 
-    for stocks in stock_list:
+    for stocks in complete_stock_list:
         stock_info = yf.Ticker(stocks)
         stock_info = stock_info.history(interval= "1mo", start=start_date, end=end_date).reset_index()
         stock_info['Stock'] = stocks
@@ -85,7 +85,7 @@ else:
     stock_data = stock_data[stock_data['Date'].dt.day == 1]
 
     ### CREATE OR OVERWRITE THE STOCK DATA INPUT FILE
-    stock_data.to_csv(input_file, index=False)
+    stock_data.to_csv(stock_price_data_file, index=False)
 
 
 ### TOP MONTHS TO SELL THE STOCK
@@ -131,16 +131,19 @@ else:
     ### Creating necessary variables for data creation
     actions_data = pd.DataFrame()
     
-    for stocks in stock_list:
-        actions_info = yf.Ticker(stocks)
-        actions_info = actions_info.actions.reset_index()
-        actions_info['Stock'] = stocks
-        
-        # PERFORM FURTHER STEPS DEPENDING ON THE EXISTENSE OF ACTIONS_DATA
-        if actions_data.shape[0] == 0:
-            actions_data = actions_info
-        else:
-            actions_data = pd.concat([actions_data, actions_info])
+    for stocks in complete_stock_list:
+        try:
+          actions_info = yf.Ticker(stocks)
+          actions_info = actions_info.actions.reset_index()
+          actions_info['Stock'] = stocks
+
+          # PERFORM FURTHER STEPS DEPENDING ON THE EXISTENSE OF ACTIONS_DATA
+          if actions_data.shape[0] == 0:
+              actions_data = actions_info
+          else:
+              actions_data = pd.concat([actions_data, actions_info])
+        except:
+          print("Error with the Stock " + stocks)
     
     ### CREATING ADDITIONAL COLUMNS
 
@@ -193,6 +196,7 @@ else:
     last_day_data = pd.DataFrame()
     
     for stocks in stock_list:
+        try:
         stock_info = yf.Ticker(stocks)
         stock_info = stock_info.history(period="1y", interval= "1d").reset_index()
         stock_info['Stock'] = stocks
@@ -202,6 +206,8 @@ else:
             last_day_data = stock_info
         else:
             last_day_data = pd.concat([last_day_data, stock_info])
+      except:
+          print('Error with Stock ' + stocks)
     last_day_data = last_day_data[last_day_data['Open'].notnull()]
 
     ### CREATING ADDITIONAL COLUMNS
@@ -255,7 +261,6 @@ summary_file.head()
 
 ### WRITING THE FINAL DATA
 stock_summary_file = path + "\\us-stocks-analysis\\input\\stock_summary_file.xlsx"
-# summary_file.to_csv(stock_summary_file, index=False)
 summary_file.to_excel(stock_summary_file, header=True, index=False, sheet_name='Stock Summary')
 
 ### OTHER THINGS TO DO
