@@ -1,0 +1,8 @@
+1. If current month abb name in 'Months to Sell' then 1 else 0 +
+2. Calculate avg yearly growth percentile by sector +
+3. Growth Probability +
+4. avg yearly growth dividend percentile +
+5. Dividend Growth Probability +
+6. Atleast 1 Split in the past decade 0.5 (or 1)
+7. Come up with a yearly and monthly volatility metrics +
+8. If Close < 52 Week Low + (52 Week Median - 52 Week Low) / 2, then 1, if < median then 0.8, if < 52 week median + (52 week High - 52 Week Median) / 2 then 0.4, else 0.2 
