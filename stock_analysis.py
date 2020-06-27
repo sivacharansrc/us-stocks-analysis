@@ -271,3 +271,10 @@ summary_file.to_excel(stock_summary_file, header=True, index=False, sheet_name='
 # HOW DOES THE STOCK COMPARE TO THE SECTOR AVERAGE
 # CALCULATE THE SMALL, MID, AND LARGE CAP
 # FINALLY CREATE RANKING BY SECTOR, CAP, GENERAL RANKING
+
+### NEW INFO TO BE ADDED 
+
+msft = yf.Ticker("MSFT")
+info_data = msft.info
+pd.DataFrame.from_dict(info_data, orient='index')[30:45]
+info_data.shape
