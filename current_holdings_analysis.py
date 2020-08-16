@@ -15,6 +15,7 @@ my_current_holdings = ["VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC XITK VHT FH
 start_date = str(int(datetime.today().strftime('%Y')) - 10)  + '-01-01' # Pulling 10 Years of data
 
 df = yf.download("VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC VHT FHLC IHI SMH XSD ARKK ARKW ARKF ARKQ BND AGG FNBGX", start=start_date)
+#df = yf.download("VTI FNBGX", start=start_date, period='1mo', interval='5m')
 df = df.unstack().reset_index()
 df.columns = ['col_name', 'Ticker', 'Date', 'Value']
 df = df.pivot_table(values='Value', index=['Ticker', 'Date'],columns='col_name').reset_index()
