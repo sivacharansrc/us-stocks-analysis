@@ -3,6 +3,8 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime
 import numpy as np
+import pandas_gbq
+import os
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
 
@@ -18,6 +20,13 @@ df.columns = ['col_name', 'Ticker', 'Date', 'Value']
 df = df.pivot_table(values='Value', index=['Ticker', 'Date'],columns='col_name').reset_index()
 df = df.sort_values(['Ticker', 'Date'])
 df.columns.name = None
+col_names = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume']
+df.columns = col_names
 
-df.to_csv(r"/home/my-portfolio-analysis/historical_quotes.csv", index=False)
 
+df.to_csv(r"/home/sivacharansrc/my-portfolio-analysis/output/my_portfolio_10_yr_historical_quotes.csv", index=False)
+# Writing pandas dataframe to BigQuery DataSet
+
+# GENERATING THE PATH OF THE INPUT STOCK DATA FILE
+
+pandas_gbq.to_gbq(df, 'portfolio_data.holdings_historical_quotes', project_id= 'my-portfolio-analysis', if_exists='replace')
