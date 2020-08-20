@@ -15,10 +15,11 @@ minute_df = yf.download(minute_data_holdings, period="5d", interval="1m")
 minute_df = minute_df.unstack().reset_index()
 minute_df.columns = ['col_name', 'Ticker', 'Date', 'Value']
 minute_df = minute_df.pivot_table(values='Value', index=['Ticker', 'Date'],columns='col_name').reset_index()
-minute_df = minute_df.sort_values(['Ticker', 'Date'])
+minute_df = minute_df.sort_values(['Ticker', 'Date'], ascending=False)
 minute_df.columns.name = None
 col_names = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume']
 minute_df.columns = col_names
+minute_df.date = minute_df.date.dt.tz_convert('US/Central')
 
 # CALCULATING MOVING AVERAGES
 minute_df['sma_30'] = minute_df.groupby(['ticker'])['adj_close'].rolling(window=30).mean().reset_index(drop=True)
@@ -32,3 +33,4 @@ pandas_gbq.to_gbq(minute_df, 'portfolio_data.minute_quotes_analysis', project_id
 
 # PRINTING SUCCESSFUL CODE EXECUTION MESSAGE
 print("Writing to BigQuery over minute_quotes_analysis successfully completed")
+

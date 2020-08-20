@@ -19,10 +19,11 @@ daily_df = yf.download(daily_data_holdings, start=start_date, interval="1d")
 daily_df = daily_df.unstack().reset_index()
 daily_df.columns = ['col_name', 'Ticker', 'Date', 'Value']
 daily_df = daily_df.pivot_table(values='Value', index=['Ticker', 'Date'],columns='col_name').reset_index()
-daily_df = daily_df.sort_values(['Ticker', 'Date'])
+daily_df = daily_df.sort_values(['Ticker', 'Date'], ascending=False)
 daily_df.columns.name = None
 col_names = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume']
 daily_df.columns = col_names
+minute_df.date = minute_df.date.dt.tz_convert('US/Central')
 
 # CALCULATING MOVING AVERAGES
 daily_df['sma_50'] = daily_df.groupby(['ticker'])['adj_close'].rolling(window=50).mean().reset_index(drop=True)
