@@ -6,7 +6,7 @@ import numpy as np
 import pandas_gbq
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
-
+minute_data_holdings = "VTI VOO"
 minute_data_holdings = "VTI VOO IVV VGT FTEC XITK VHT FHLC IHI XHE SMH XSD ARKK ARKW ARKF ARKQ ARKG SLV GLDM IAU BND AGG MRNA MRVL WFC TSLA"
 
 ### PREPARING DATA FOR DAILY AVERAGE ###

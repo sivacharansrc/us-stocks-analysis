@@ -14,7 +14,7 @@ daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC XITK VHT FHL
 
 ### PREPARING DATA FOR DAILY AVERAGE ###
 
-start_date = str(int(datetime.today().strftime('%Y')) - 2) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')  # Pulling 2 Years of data
+start_date = str(int(datetime.today().strftime('%Y')) - 10) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')  # Pulling 2 Years of data
 daily_df = yf.download(daily_data_holdings, start=start_date, interval="1d")
 daily_df = daily_df.unstack().reset_index()
 daily_df.columns = ['col_name', 'Ticker', 'Date', 'Value']
@@ -23,7 +23,7 @@ daily_df = daily_df.sort_values(['Ticker', 'Date'], ascending=False)
 daily_df.columns.name = None
 col_names = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume']
 daily_df.columns = col_names
-minute_df.date = minute_df.date.dt.tz_convert('US/Central')
+# daily_df.date = daily_df.date.dt.tz_convert('US/Central')
 
 # CALCULATING MOVING AVERAGES
 daily_df['sma_50'] = daily_df.groupby(['ticker'])['adj_close'].rolling(window=50).mean().reset_index(drop=True)
