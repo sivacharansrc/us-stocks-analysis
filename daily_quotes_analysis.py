@@ -54,14 +54,14 @@ daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, k
 # CALCULATION REFERENCE - https://www.investopedia.com/ask/answers/122414/what-moving-average-convergence-divergence-macd-formula-and-how-it-calculated.asp
 # PYTHON REFERENCE - https://towardsdatascience.com/trading-toolbox-02-wma-ema-62c22205e2a9
 
-daily_df['12_ema'] = daily_df.close.ewm(span=12, adjust=False).mean().reset_index(drop=True)
-daily_df['26_ema'] = daily_df.close.ewm(span=26, adjust=False).mean().reset_index(drop=True)
-daily_df['macd_line'] = daily_df['12_ema'] - daily_df['26_ema']
+daily_df['ema_12'] = daily_df.close.ewm(span=12, adjust=False).mean().reset_index(drop=True)
+daily_df['ema_26'] = daily_df.close.ewm(span=26, adjust=False).mean().reset_index(drop=True)
+daily_df['macd_line'] = daily_df['ema_12'] - daily_df['ema_26']
 daily_df['signal_line'] = daily_df['macd_line'].ewm(span=9, adjust=False).mean().reset_index(drop=True)
 daily_df['macd_histogram'] = daily_df['macd_line'] - daily_df['signal_line']
 
 # SUBSETTING THE COLUMNS TO KEEP
-cols_to_keep = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume', 'daily_change_pct', 'max_date_filter', 'relative_strength_index', '12_ema', '26_ema', 'macd_line', 'signal_line', 'macd_histogram']
+cols_to_keep = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume', 'daily_change_pct', 'max_date_filter', 'relative_strength_index', 'ema_12', 'ema_26', 'macd_line', 'signal_line', 'macd_histogram']
 daily_df = daily_df[cols_to_keep]
 
 # WRITING PANDAS DATAFRAME TO BIGQUERY DATASET
