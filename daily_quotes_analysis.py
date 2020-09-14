@@ -50,6 +50,9 @@ daily_df['relative_strength_index'] = 100 - (100 / (1 + (daily_df.ups_avg / dail
 daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort')
 
 # CALCULATE MACD ON TOP OF ADJUSTED CLOSING PRICE
+# CALCULATION REFERENCE - https://www.youtube.com/watch?v=9wqvjl_smv4&t=14s&ab_channel=Troy%26Vaishali
+# CALCULATION REFERENCE - https://www.investopedia.com/ask/answers/122414/what-moving-average-convergence-divergence-macd-formula-and-how-it-calculated.asp
+# PYTHON REFERENCE - https://towardsdatascience.com/trading-toolbox-02-wma-ema-62c22205e2a9
 
 daily_df['12_ema'] = daily_df.close.ewm(span=12, adjust=False).mean().reset_index(drop=True)
 daily_df['26_ema'] = daily_df.close.ewm(span=26, adjust=False).mean().reset_index(drop=True)
