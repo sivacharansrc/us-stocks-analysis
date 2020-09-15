@@ -10,7 +10,7 @@ import pandas_gbq
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
 
-daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC XITK VHT FHLC IHI XHE SMH XSD ARKK ARKW ARKF ARKQ ARKG SLV GLDM FPBFX FIVFX BND AGG FNBGX MRNA MRVL WFC IAU TSLA"
+daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC XITK VHT FHLC IHI XHE VYM SCHD FPBFX FIVFX SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG FNBGX WFC TSLA FSCSX FSELX FSPHX FBIOX FFNOX AAPL"
 # daily_data_holdings = "VOO ARKK"
 
 ### PREPARING DATA FOR DAILY AVERAGE ###
@@ -24,7 +24,7 @@ daily_df = daily_df.sort_values(['Ticker', 'Date'], ascending=False)
 daily_df.columns.name = None
 col_names = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume']
 daily_df.columns = col_names
-daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort') #mergesort works better on pre-sorted items. For most other cases, quicksort works good
+daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort').reset_index(drop=True) #mergesort works better on pre-sorted items. For most other cases, quicksort works good
 
 # CALCULATING MOVING AVERAGES
 # daily_df['sma_50'] = daily_df.groupby(['ticker'])['adj_close'].rolling(window=50).mean().reset_index(drop=True)
@@ -35,7 +35,7 @@ daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, k
  
 daily_df['daily_change_pct'] = (daily_df.adj_close - daily_df.groupby(['ticker']).adj_close.shift(1)) / daily_df.adj_close
 daily_df['max_date_filter'] = np.where(daily_df.date == daily_df.groupby('ticker').date.transform('max').reset_index(drop=True),"YES", "NO")
-daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort')
+daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort').reset_index(drop=True)
 
 # CALCULATING RSI
 # LET US CALCULATE THE RSI USING THE PERIOD = 28
@@ -47,7 +47,7 @@ daily_df['downs'] = np.where(daily_df.adj_close - daily_df.groupby(['ticker']).a
 daily_df['ups_avg'] = daily_df.groupby(['ticker'])['ups'].rolling(window=period).mean().reset_index(drop=True).shift(1)
 daily_df['downs_avg'] = daily_df.groupby(['ticker'])['downs'].rolling(window=period).mean().reset_index(drop=True).shift(1)
 daily_df['relative_strength_index'] = 100 - (100 / (1 + (daily_df.ups_avg / daily_df.downs_avg)))
-daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort')
+daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort').reset_index(drop=True)
 
 # CALCULATE MACD ON TOP OF ADJUSTED CLOSING PRICE
 # CALCULATION REFERENCE - https://www.youtube.com/watch?v=9wqvjl_smv4&t=14s&ab_channel=Troy%26Vaishali
