@@ -34,8 +34,9 @@ minute_df['prev_close'] = minute_df.groupby(['ticker']).adj_close.shift(1)
 minute_df['minute_change_pct'] = (minute_df.adj_close - minute_df.prev_close) / minute_df.adj_close
 minute_df['max_date_filter'] = np.where(minute_df.date == minute_df.groupby('ticker').date.transform('max').reset_index(drop=True),"YES", "NO")
 minute_df = minute_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort').reset_index(drop=True)
-minute_df['open_price'] = minute_df.groupby('ticker').open.rank(method='first', ascending=True).reset_index(drop=True)
-
+minute_df['open_price'] = minute_df.groupby('ticker').open.transform('first').reset_index(drop=True)
+minute_df['change_since_open'] = (minute_df.adj_close - minute_df.open_price) / minute_df.adj_close
+minute_df = minute_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort').reset_index(drop=True)
 
 # CALCULATING RSI
 # LET US CALCULATE THE RSI USING THE PERIOD = 28
@@ -62,7 +63,7 @@ minute_df['signal_line'] = minute_df['macd_line'].ewm(span=9, adjust=False).mean
 minute_df['macd_histogram'] = minute_df['macd_line'] - minute_df['signal_line']
 
 # SUBSETTING THE COLUMNS TO KEEP
-cols_to_keep = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume', 'minute_change_pct', 'max_date_filter', 'relative_strength_index', 'ema_12', 'ema_26', 'macd_line', 'signal_line', 'macd_histogram']
+cols_to_keep = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume', 'minute_change_pct', 'change_since_open','max_date_filter', 'relative_strength_index', 'ema_12', 'ema_26', 'macd_line', 'signal_line', 'macd_histogram']
 minute_df = minute_df[cols_to_keep]
 
 # WRITING PANDAS DATAFRAME TO BIGQUERY DATASET
