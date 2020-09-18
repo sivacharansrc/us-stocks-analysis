@@ -21,7 +21,6 @@ minute_df.columns.name = None
 col_names = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume']
 minute_df.columns = col_names
 minute_df.date = minute_df.date.dt.tz_convert('US/Central')
-minute_df = minute_df[minute_df.date.dt.date == minute_df.date.dt.date.max()]
 minute_df = minute_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort').reset_index(drop=True) #mergesort works better on pre-sorted items. For most other cases, quicksort works good
 
 # CALCULATING MOVING AVERAGES
@@ -61,6 +60,10 @@ minute_df['ema_26'] = minute_df.close.ewm(span=26, adjust=False).mean().reset_in
 minute_df['macd_line'] = minute_df['ema_12'] - minute_df['ema_26']
 minute_df['signal_line'] = minute_df['macd_line'].ewm(span=9, adjust=False).mean().reset_index(drop=True)
 minute_df['macd_histogram'] = minute_df['macd_line'] - minute_df['signal_line']
+
+# SUBSETTING THE LAST AVAILABLE DATE DATA
+
+minute_df = minute_df[minute_df.date.dt.date == minute_df.date.dt.date.max()]
 
 # SUBSETTING THE COLUMNS TO KEEP
 cols_to_keep = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume', 'minute_change_pct', 'change_since_open','max_date_filter', 'relative_strength_index', 'ema_12', 'ema_26', 'macd_line', 'signal_line', 'macd_histogram']
