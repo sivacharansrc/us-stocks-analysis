@@ -15,7 +15,7 @@ daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC XITK VHT FHL
 
 ### PREPARING DATA FOR DAILY AVERAGE ###
 
-start_date = str(int(datetime.today().strftime('%Y')) - 10) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')  # Pulling 2 Years of data
+start_date = str(int(datetime.today().strftime('%Y')) - 11) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')  # Pulling 2 Years of data
 daily_df = yf.download(daily_data_holdings, start=start_date, interval="1d")
 daily_df = daily_df.unstack().reset_index()
 daily_df.columns = ['col_name', 'Ticker', 'Date', 'Value']
@@ -33,9 +33,8 @@ stock_data_analysis = daily_df.copy()
 # daily_df['sma_200'] = daily_df.groupby(['ticker'])['adj_close'].rolling(window=200).mean().reset_index(drop=True)
 
 # CALCULATING OTHER CALCULATED COLUMNS
- 
+
 daily_df['daily_change_pct'] = (daily_df.adj_close - daily_df.groupby(['ticker']).adj_close.shift(1)) / daily_df.adj_close
-daily_df['max_date_filter'] = np.where(daily_df.date == daily_df.groupby('ticker').date.transform('max').reset_index(drop=True),"YES", "NO")
 daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort').reset_index(drop=True)
 
 # CALCULATING RSI
@@ -61,33 +60,35 @@ daily_df['macd_line'] = daily_df['ema_12'] - daily_df['ema_26']
 daily_df['signal_line'] = daily_df['macd_line'].ewm(span=9, adjust=False).mean().reset_index(drop=True)
 daily_df['macd_histogram'] = daily_df['macd_line'] - daily_df['signal_line']
 
+# SUBSETTING 10 YEARS DATA AND CREATING MAX AND MIN DATE FILTER
+
+daily_df = daily_df[daily_df.date.dt.year >= daily_df.date.dt.year.max()-10].reset_index(drop=True)
+daily_df['date_filter'] = np.where(daily_df.date == daily_df.groupby('ticker').date.transform('max').reset_index(drop=True),"MAX", "NO")
+
+
 # SUBSETTING THE COLUMNS TO KEEP
-cols_to_keep = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume', 'daily_change_pct', 'max_date_filter', 'relative_strength_index', 'ema_12', 'ema_26', 'macd_line', 'signal_line', 'macd_histogram']
+cols_to_keep = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume', 'daily_change_pct', 'date_filter', 'relative_strength_index', 'ema_12', 'ema_26', 'macd_line', 'signal_line', 'macd_histogram']
 daily_df = daily_df[cols_to_keep]
 
 # PREPARING THE STOCK ANALYSIS DATA
 
 # Date	Open	High	Low	Close	Volume	Dividends	Stock Splits	Stock	Adj Close	Year	Month
-# ticker open   high    low close   volume                              ticker  adj_close   year    month 
+# ticker open   high    low close   volume                              ticker  adj_close   year    month
 
-stock_data_analysis['year'] = stock_data_analysis.date.dt.year
-stock_data_analysis['month'] = stock_data_analysis['date'].dt.month_name().str.slice(stop=3)
+# stock_data_analysis['year'] = stock_data_analysis.date.dt.year
+# stock_data_analysis['month'] = stock_data_analysis['date'].dt.month_name().str.slice(stop=3)
 
 ### TOP MONTHS TO SELL THE STOCK
 
-temp = stock_data_analysis[['high', 'adj_close', 'ticker', 'year', 'month']]
-temp['mean'] = temp.groupby(['ticker', 'year'])['adj_close'].mean().reset_index()
-rank(method='dense', ascending=False).copy()
-temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'year', 'rank'], ascending=False)
-temp = temp.pivot_table(index=['ticker', 'month'], aggfunc={'year': 'count'}).reset_index()
-temp['rank'] = temp.groupby(['ticker'])['year'].rank(method='dense', ascending=False).copy()
-temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'rank'], ascending=True).copy()
-months_to_sell = temp.groupby(['ticker'])['month'].apply('-'.join).reset_index()
-months_to_sell.columns = ['ticker', 'months_to_sell']
-
-
-
-
+# temp = stock_data_analysis[['high', 'adj_close', 'ticker', 'year', 'month']]
+# temp['mean'] = temp.groupby(['ticker', 'year'])['adj_close'].mean().reset_index()
+# rank(method='dense', ascending=False).copy()
+# temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'year', 'rank'], ascending=False)
+# temp = temp.pivot_table(index=['ticker', 'month'], aggfunc={'year': 'count'}).reset_index()
+# temp['rank'] = temp.groupby(['ticker'])['year'].rank(method='dense', ascending=False).copy()
+# temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'rank'], ascending=True).copy()
+# months_to_sell = temp.groupby(['ticker'])['month'].apply('-'.join).reset_index()
+# months_to_sell.columns = ['ticker', 'months_to_sell']
 
 
 # WRITING PANDAS DATAFRAME TO BIGQUERY DATASET
