@@ -13,6 +13,21 @@ import pandas_gbq
 daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC XITK VHT FHLC IHI XHE VYM SCHD FPBFX FIVFX SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG FNBGX WFC TSLA FSCSX FSELX FSPHX FBIOX FFNOX AAPL"
 # daily_data_holdings = "VOO ARKK"
 
+### CATEGORIZING STOCKS
+
+investment_account = ['VTI', 'FZROX', 'FSKAX', 'VOO', 'IVV', 'FXAIX', 'FNILX', 'VGT', 'FTEC', 'XITK', 'VHT', 'FHLC', 'IHI', 'XHE', 'VYM', 'SCHD', 'FPBFX', 'FIVFX', 'SMH', 'XSD', 'ARKK', 'ARKW', 'ARKF', 'ARKQ', 'ARKG', 'WCLD', 'SKYY', 'SLV', 'GLDM', 'IAU', 'BND', 'AGG', 'FNBGX', 'WFC', 'TSLA', 'AAPL']
+retirement_account = ['FZROX', 'FSKAX', 'FXAIX', 'FNILX', 'FSCSX', 'FSELX', 'FSPHX', 'FBIOX', 'FFNOX']
+s_and_p_500 = ['FXAIX', 'VOO', 'IVV', 'FNILX']
+total_market = ['VTI',  'FZROX', 'FSKAX', 'VOO']
+technology = ['VGT', 'FTEC', 'XITK', 'FSCSX']
+semiconductors = ['SMH', 'XSD', 'FSELX']
+dividends = ['VYM', 'SCHD', 'WFC']
+health = ['VHT', 'FHLC', 'IHI', 'XHE', 'FSPHX', 'FBIOX']
+high_growth = ['ARKK', 'ARKW', 'ARKF', 'ARKQ', 'ARKG', 'WCLD', 'SKYY', 'TSLA', 'AAPL']
+international = ['FPBFX', 'FIVFX', 'FFNOX']
+metals = ['SLV', 'GLDM', 'IAU']
+bond = ['BND', 'AGG', 'FNBGX']
+
 ### PREPARING DATA FOR DAILY AVERAGE ###
 
 start_date = str(int(datetime.today().strftime('%Y')) - 11) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')  # Pulling 2 Years of data
@@ -25,6 +40,8 @@ daily_df.columns.name = None
 col_names = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume']
 daily_df.columns = col_names
 daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort').reset_index(drop=True) #mergesort works better on pre-sorted items. For most other cases, quicksort works good
+daily_df['account'] = np.where((daily_df.ticker.isin(investment_account)) & (daily_df.ticker.isin(retirement_account)), "Both Accounts", np.where(daily_df.ticker.isin(investment_account), "Investment Account", "Retirement Account"))
+daily_df['sector'] = np.where(daily_df.ticker.isin(s_and_p_500),'S&P 500', np.where(daily_df.ticker.isin(total_market),'Total Market', np.where(daily_df.ticker.isin(technology),'Technology', np.where(daily_df.ticker.isin(semiconductors),'Semiconductors', np.where(daily_df.ticker.isin(health),'Health Service & Devices', np.where(daily_df.ticker.isin(dividends),'Dividends', np.where(daily_df.ticker.isin(high_growth),'High Growth', np.where(daily_df.ticker.isin(international),'International', np.where(daily_df.ticker.isin(bond),'Bonds', np.where(daily_df.ticker.isin(metals),'Precious Metals','Not Applicable'))))))))))
 stock_data_analysis = daily_df.copy()
 
 # CALCULATING MOVING AVERAGES
@@ -67,7 +84,7 @@ daily_df['date_filter'] = np.where(daily_df.date == daily_df.groupby('ticker').d
 
 
 # SUBSETTING THE COLUMNS TO KEEP
-cols_to_keep = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume', 'daily_change_pct', 'date_filter', 'relative_strength_index', 'ema_12', 'ema_26', 'macd_line', 'signal_line', 'macd_histogram']
+cols_to_keep = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume', 'account', 'sector', 'daily_change_pct', 'date_filter', 'relative_strength_index', 'ema_12', 'ema_26', 'macd_line', 'signal_line', 'macd_histogram']
 daily_df = daily_df[cols_to_keep]
 
 # PREPARING THE STOCK ANALYSIS DATA
