@@ -11,7 +11,7 @@ import pandas_gbq
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
 
 daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC XITK VHT FHLC IHI XHE VYM SCHD FPBFX FIVFX SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG FNBGX WFC TSLA FSCSX FSELX FSPHX FBIOX FFNOX AAPL"
-# daily_data_holdings = "VOO ARKK VTI IVV"
+# daily_data_holdings = "VOO ARKK VTI ARKG WCLD"
 
 ### CATEGORIZING STOCKS
 
@@ -57,6 +57,8 @@ daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, k
 # CALCULATING CHANGE FROM 52 WEEKS
 
 daily_df['52_wk_comparison_price'] = np.where(daily_df.date.dt.year % 4 == 0, daily_df.groupby(['ticker']).adj_close.shift(366), daily_df.groupby(['ticker']).adj_close.shift(365))
+daily_df['first_value'] = daily_df.groupby(['ticker'])['adj_close'].transform('first').reset_index(drop=True)
+daily_df['52_wk_comparison_price'] = np.where((daily_df['52_wk_comparison_price'].isnull()) & (daily_df.date == daily_df.date.max()), daily_df['first_value'], daily_df['52_wk_comparison_price'])
 daily_df['change_since_52_weeks'] = (daily_df['adj_close'] - daily_df['52_wk_comparison_price']) / daily_df.adj_close
 
 
