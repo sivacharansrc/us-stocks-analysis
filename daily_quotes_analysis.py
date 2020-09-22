@@ -112,15 +112,26 @@ daily_df = daily_df[cols_to_keep]
 
 # ## TOP MONTHS TO SELL THE STOCK
 
-# temp = stock_data_analysis[['high', 'adj_close', 'ticker', 'year', 'month']]
-# temp['mean_highs'] = temp.groupby(['ticker', 'year', 'month'])['high'].transform('mean').reset_index(drop=True)
-# temp['rank'] = temp.groupby(['ticker', 'year'])['mean_highs'].rank(method='dense', ascending=False)
-# temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'year', 'rank'], ascending=False)
-# temp = temp.pivot_table(index=['ticker', 'month'], aggfunc={'year': 'count'}).reset_index()
-# temp['rank'] = temp.groupby(['ticker'])['year'].rank(method='dense', ascending=False).copy()
-# temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'rank'], ascending=True).copy()
-# months_to_sell = temp.groupby(['ticker'])['month'].apply('-'.join).reset_index()
-# months_to_sell.columns = ['ticker', 'months_to_sell']
+temp = stock_data_analysis[['high', 'ticker', 'year', 'month']]
+temp['mean_highs'] = temp.groupby(['ticker', 'year', 'month'])['high'].transform('mean').reset_index(drop=True)
+temp['rank'] = temp.groupby(['ticker', 'year'])['mean_highs'].rank(method='dense', ascending=False)
+temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'year', 'rank'], ascending=False)
+temp = temp.pivot_table(index=['ticker', 'month'], aggfunc={'year': 'count'}).reset_index()
+temp['rank'] = temp.groupby(['ticker'])['year'].rank(method='dense', ascending=False).copy()
+temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'rank'], ascending=True).copy()
+months_to_sell = temp.groupby(['ticker'])['month'].apply('-'.join).reset_index()
+months_to_sell.columns = ['ticker', 'months_to_sell']
+
+### TOP MONTHS TO SELL THE STOCK
+
+temp = stock_data[['High', 'Stock', 'Year', 'Month']]
+temp['Rank'] = temp.groupby(['Stock', 'Year'])['High'].rank(method='dense', ascending=False)
+temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Year', 'Rank'], ascending=False)
+temp = temp.pivot_table(index=['Stock', 'Month'], aggfunc={'Year': 'count'}).reset_index()
+temp['Rank'] = temp.groupby(['Stock'])['Year'].rank(method='dense', ascending=False).copy()
+temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Rank'], ascending=True).copy()
+months_to_sell = temp.groupby(['Stock'])['Month'].apply('-'.join).reset_index()
+months_to_sell.columns = ['Stock', 'Months to Sell']
 
 # ### TOP MONTHS TO BUY THE STOCKS
 
@@ -133,6 +144,19 @@ daily_df = daily_df[cols_to_keep]
 # temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'rank'], ascending=True).copy()
 # months_to_buy = temp.groupby(['ticker'])['month'].apply('-'.join).reset_index()
 # months_to_buy.columns = ['ticker', 'months_to_sell']
+
+
+
+### TOP MONTHS TO BUY THE STOCKS
+
+temp = stock_data[['Low', 'Stock', 'Year', 'Month']]
+temp['Rank'] = temp.groupby(['Stock', 'Year'])['Low'].rank(method='dense', ascending=True).copy()
+temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Year', 'Rank'], ascending=True).copy()
+temp = temp.pivot_table(index=['Stock', 'Month'], aggfunc={'Year': 'count'}).reset_index()
+temp['Rank'] = temp.groupby(['Stock'])['Year'].rank(method='dense', ascending=False).copy()
+temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Rank'], ascending=True).copy()
+months_to_buy = temp.groupby(['Stock'])['Month'].apply('-'.join).reset_index()
+months_to_buy.columns = ['Stock', 'Months to Buy']
 
 
 # WRITING PANDAS DATAFRAME TO BIGQUERY DATASET
