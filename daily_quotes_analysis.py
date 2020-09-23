@@ -107,56 +107,62 @@ daily_df = daily_df[cols_to_keep]
 # Date	Open	High	Low	Close	Volume	Dividends	Stock Splits	Stock	Adj Close	Year	Month
 # ticker open   high    low close   volume                              ticker  adj_close   year    month
 
-# stock_data_analysis['year'] = stock_data_analysis.date.dt.year
-# stock_data_analysis['month'] = stock_data_analysis['date'].dt.month_name().str.slice(stop=3)
+stock_data_analysis['year'] = stock_data_analysis.date.dt.year
+stock_data_analysis['month'] = stock_data_analysis['date'].dt.month_name().str.slice(stop=3)
 
 # ## TOP MONTHS TO SELL THE STOCK
 
-temp = stock_data_analysis[['high', 'ticker', 'year', 'month']]
+temp = stock_data_analysis[['high', 'ticker', 'year', 'month']].copy()
 temp['mean_highs'] = temp.groupby(['ticker', 'year', 'month'])['high'].transform('mean').reset_index(drop=True)
 temp['rank'] = temp.groupby(['ticker', 'year'])['mean_highs'].rank(method='dense', ascending=False)
 temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'year', 'rank'], ascending=False)
+temp = temp[['ticker', 'year', 'month', 'rank']].drop_duplicates()
 temp = temp.pivot_table(index=['ticker', 'month'], aggfunc={'year': 'count'}).reset_index()
-temp['rank'] = temp.groupby(['ticker'])['year'].rank(method='dense', ascending=False).copy()
+temp['rank'] = temp.groupby(['ticker'])['year'].rank(method='dense', ascending=False)
 temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'rank'], ascending=True).copy()
 months_to_sell = temp.groupby(['ticker'])['month'].apply('-'.join).reset_index()
 months_to_sell.columns = ['ticker', 'months_to_sell']
 
-### TOP MONTHS TO SELL THE STOCK
-
-temp = stock_data[['High', 'Stock', 'Year', 'Month']]
-temp['Rank'] = temp.groupby(['Stock', 'Year'])['High'].rank(method='dense', ascending=False)
-temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Year', 'Rank'], ascending=False)
-temp = temp.pivot_table(index=['Stock', 'Month'], aggfunc={'Year': 'count'}).reset_index()
-temp['Rank'] = temp.groupby(['Stock'])['Year'].rank(method='dense', ascending=False).copy()
-temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Rank'], ascending=True).copy()
-months_to_sell = temp.groupby(['Stock'])['Month'].apply('-'.join).reset_index()
-months_to_sell.columns = ['Stock', 'Months to Sell']
-
-# ### TOP MONTHS TO BUY THE STOCKS
-
-# temp = stock_data_analysis[['low', 'adj_close', 'ticker', 'year', 'month']]
-# temp['mean_lows'] = temp.groupby(['ticker', 'year', 'month'])['low'].transform('mean').reset_index(drop=True)
-# temp['rank'] = temp.groupby(['ticker', 'year'])['mean_lows'].rank(method='dense', ascending=True)
-# temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'year', 'rank'], ascending=True)
-# temp = temp.pivot_table(index=['ticker', 'month'], aggfunc={'year': 'count'}).reset_index()
-# temp['rank'] = temp.groupby(['ticker'])['year'].rank(method='dense', ascending=True).copy()
-# temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'rank'], ascending=True).copy()
-# months_to_buy = temp.groupby(['ticker'])['month'].apply('-'.join).reset_index()
-# months_to_buy.columns = ['ticker', 'months_to_sell']
-
-
-
 ### TOP MONTHS TO BUY THE STOCKS
+temp = stock_data_analysis[['low', 'ticker', 'year', 'month']].copy()
+temp['mean_lows'] = temp.groupby(['ticker', 'year', 'month'])['low'].transform('mean').reset_index(drop=True)
+temp['rank'] = temp.groupby(['ticker', 'year'])['mean_lows'].rank(method='dense', ascending=True)
+temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'year', 'rank'], ascending=True)
+temp = temp[['ticker', 'year', 'month', 'rank']].drop_duplicates()
+temp = temp.pivot_table(index=['ticker', 'month'], aggfunc={'year': 'count'}).reset_index()
+temp['rank'] = temp.groupby(['ticker'])['year'].rank(method='dense', ascending=True).copy()
+temp = temp.loc[temp['rank'] <= 3].sort_values(by=['ticker', 'rank'], ascending=True).copy()
+months_to_buy = temp.groupby(['ticker'])['month'].apply('-'.join).reset_index()
+months_to_buy.columns = ['ticker', 'months_to_buy']
 
-temp = stock_data[['Low', 'Stock', 'Year', 'Month']]
-temp['Rank'] = temp.groupby(['Stock', 'Year'])['Low'].rank(method='dense', ascending=True).copy()
-temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Year', 'Rank'], ascending=True).copy()
-temp = temp.pivot_table(index=['Stock', 'Month'], aggfunc={'Year': 'count'}).reset_index()
-temp['Rank'] = temp.groupby(['Stock'])['Year'].rank(method='dense', ascending=False).copy()
-temp = temp.loc[temp['Rank'] <= 3].sort_values(by=['Stock', 'Rank'], ascending=True).copy()
-months_to_buy = temp.groupby(['Stock'])['Month'].apply('-'.join).reset_index()
-months_to_buy.columns = ['Stock', 'Months to Buy']
+### GENERATE GROWTH METRICS FOR THE STOCKS
+temp = stock_data_analysis[['adj_close', 'ticker', 'year', 'month']].loc[stock_data_analysis['month']=="Dec"].sort_values(by=['ticker', 'year']).reset_index().copy()
+temp['lagged_close'] = temp.groupby(by=['ticker'])['adj_close'].shift(1)
+temp['yearly_growth'] = (temp['adj_close'] - temp['lagged_close']) / temp['lagged_close']
+avg_yearly_growth = temp.groupby('ticker')['yearly_growth'].mean().reset_index()
+temp['growth_probability'] = np.where(np.isnan(temp['yearly_growth']), np.NaN, np.where(temp['yearly_growth'] > 0,1,-1))
+growth_tendency = (temp.groupby('ticker')['growth_probability'].sum() / (temp.groupby('ticker')['growth_probability'].count())).reset_index()
+growth_metrics = pd.merge(avg_yearly_growth, growth_tendency, how="inner")
+
+### CALCUALTE THE TOTAL HISTORICAL DATA POINTS
+temp = stock_data_analysis[['ticker', 'date']].copy()
+temp['max_date'] = temp.groupby('ticker')['date'].transform('max').reset_index(drop=True)
+temp['min_date'] = temp.groupby('ticker')['date'].transform('min').reset_index(drop=True)
+temp = temp[['ticker', 'max_date', 'min_date']].copy().drop_duplicates()
+temp['no_of_months'] = ((temp.max_date - temp.min_date) / np.timedelta64(1, 'M')).round(decimals=0).astype('int')
+total_data_points = temp[['ticker', 'no_of_months']].copy()
+
+### SUBSETTING 1 YR DATA TO GENERATE 52 WEEK METRICS
+
+temp = stock_data_analysis[['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open']].copy()
+max_period = temp.date.max()
+filter_period = np.where(max_period.year % 4 == 0, max_period - timedelta(days=366), max_period - timedelta(days=365))
+temp = temp[temp.date >= filter_period]
+temp['52_week_high'] = temp.groupby('ticker')['high'].transform('max')
+temp['52_week_low'] = temp.groupby('ticker')['low'].transform('min')
+temp['52_week_mean'] = (temp.groupby('ticker')['open'].transform('mean') + temp.groupby('ticker')['close'].transform('mean')) / 2
+temp['52_week_median'] = (temp.groupby('ticker')['open'].transform('median') + temp.groupby('ticker')['close'].transform('median')) / 2
+fifty_two_week_metric = temp[['ticker', '52_week_high', '52_week_low', '52_week_mean', '52_week_median']].drop_duplicates().reset_index(drop=True)
 
 
 # WRITING PANDAS DATAFRAME TO BIGQUERY DATASET
