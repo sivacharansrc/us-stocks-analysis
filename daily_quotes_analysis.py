@@ -164,6 +164,21 @@ temp['52_week_mean'] = (temp.groupby('ticker')['open'].transform('mean') + temp.
 temp['52_week_median'] = (temp.groupby('ticker')['open'].transform('median') + temp.groupby('ticker')['close'].transform('median')) / 2
 fifty_two_week_metric = temp[['ticker', '52_week_high', '52_week_low', '52_week_mean', '52_week_median']].drop_duplicates().reset_index(drop=True)
 
+### MERGING ALL SUMMARY DATASET
+
+summary_data = stock_data_analysis[['ticker', 'account', 'sector']].drop_duplicates().copy()
+summary_data = pd.merge(summary_data, total_data_points, on='ticker', how='inner')
+summary_data = pd.merge(summary_data, growth_metrics, on='ticker', how='inner')
+summary_data = pd.merge(summary_data, months_to_sell, on='ticker', how='inner')
+summary_data = pd.merge(summary_data, months_to_buy, on='ticker', how='inner')
+summary_data = pd.merge(summary_data, fifty_two_week_metric, on='ticker', how='inner')
+summary_data['target_price'] = ((summary_data['52_week_high'] * 1) + (summary_data['52_week_low'] * 1) + (summary_data['52_week_mean'] * 2) + summary_data['52_week_median'] * 2.5) / 6.5
+
+### WRITING DATA TO LOCAL DRIVE
+summary_data.to_csv("~/my-portfolio-analysis/input-files/summary_data.csv", index=False)
+# summary_data.to_csv("C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics\\us-stocks-analysis\\input\\summary_data_new.csv", index=False)
+
+
 
 # WRITING PANDAS DATAFRAME TO BIGQUERY DATASET
 

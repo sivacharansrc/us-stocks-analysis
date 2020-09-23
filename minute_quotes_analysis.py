@@ -8,7 +8,7 @@ import pandas_gbq
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
 
 minute_data_holdings = "VTI VOO IVV VGT FTEC XITK VHT FHLC IHI XHE VYM SCHD SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG WFC TSLA AAPL"
-# minute_data_holdings = "VTI VOO IVV"
+# minute_data_holdings = "VOO ARKK VTI ARKG WCLD"
 
 ### CATEGORIZING STOCKS
 
@@ -39,6 +39,7 @@ minute_df.date = minute_df.date.dt.tz_convert('US/Central')
 minute_df['account'] = np.where((minute_df.ticker.isin(investment_account)) & (minute_df.ticker.isin(retirement_account)), "Both Accounts", np.where(minute_df.ticker.isin(investment_account), "Investment Account", "Retirement Account"))
 minute_df['sector'] = np.where(minute_df.ticker.isin(s_and_p_500),'S&P 500', np.where(minute_df.ticker.isin(total_market),'Total Market', np.where(minute_df.ticker.isin(technology),'Technology', np.where(minute_df.ticker.isin(semiconductors),'Semiconductors', np.where(minute_df.ticker.isin(health),'Health Service & Devices', np.where(minute_df.ticker.isin(dividends),'Dividends', np.where(minute_df.ticker.isin(high_growth),'High Growth', np.where(minute_df.ticker.isin(international),'International', np.where(minute_df.ticker.isin(bond),'Bonds', np.where(minute_df.ticker.isin(metals),'Precious Metals','Not Applicable'))))))))))
 minute_df = minute_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, kind='mergesort').reset_index(drop=True) #mergesort works better on pre-sorted items. For most other cases, quicksort works good
+data_for_summary = minute_df[minute_df.date == minute_df.groupby('ticker').date.transform('max')][['ticker', 'date', 'close']].copy()
 
 # CALCULATING MOVING AVERAGES
 # minute_df['sma_30'] = minute_df.groupby(['ticker'])['adj_close'].rolling(window=30).mean().reset_index(drop=True)
@@ -95,9 +96,19 @@ minute_df['date_filter'] = np.where(minute_df.date == minute_df.groupby('ticker'
 cols_to_keep = ['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open', 'volume', 'account', 'sector', 'minute_change_pct', 'change_since_open','date_filter', 'relative_strength_index', 'ema_12', 'ema_26', 'macd_line', 'signal_line', 'macd_histogram']
 minute_df = minute_df[cols_to_keep]
 
+# PREPARING THE SUMMARY FILE
+
+summary_data = pd.read_csv("~/my-portfolio-analysis/input-files/summary_data.csv")
+# summary_data = pd.read_csv("C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics\\us-stocks-analysis\\input\\summary_data_new.csv")
+summary_data = pd.merge(summary_data, data_for_summary, on='ticker', how='inner')
+summary_data = summary_data[['ticker', 'account', 'sector', 'date', 'no_of_months', 'yearly_growth', 'growth_probability', 'months_to_sell', 'months_to_buy', '52_week_high', '52_week_low', '52_week_mean', '52_week_median', 'target_price', 'close']]
+summary_data = summary_data.rename(columns={"date":"last_update_time", "close":"current_price", "52_week_high":"five_two_weeks_high", "52_week_low":"five_two_weeks_low", "52_week_mean":"five_two_weeks_mean", "52_week_median":"five_two_weeks_median"})
+summary_data['pct_deviation_from_target'] = (summary_data.current_price - summary_data.target_price) / summary_data.target_price
+
 # WRITING PANDAS DATAFRAME TO BIGQUERY DATASET
 
 pandas_gbq.to_gbq(minute_df, 'portfolio_data.minute_quotes_analysis', project_id= 'my-portfolio-analysis', if_exists='replace')
+pandas_gbq.to_gbq(summary_data, 'portfolio_data.summary_data', project_id= 'my-portfolio-analysis', if_exists='replace')
 
 # PRINTING SUCCESSFUL CODE EXECUTION MESSAGE
 print("Writing to BigQuery over minute_quotes_analysis successfully completed")
