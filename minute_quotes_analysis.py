@@ -7,7 +7,7 @@ import pandas_gbq
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
 
-minute_data_holdings = "VTI VOO IVV VGT FTEC XITK VHT FHLC IHI XHE VYM SCHD SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG WFC TSLA AAPL"
+minute_data_holdings = "VTI VOO IVV VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG WFC TSLA AAPL"
 # minute_data_holdings = "VOO ARKK VTI ARKG WCLD"
 
 ### CATEGORIZING STOCKS
@@ -16,7 +16,7 @@ investment_account = ['VTI', 'FZROX', 'FSKAX', 'VOO', 'IVV', 'FXAIX', 'FNILX', '
 retirement_account = ['FZROX', 'FSKAX', 'FXAIX', 'FNILX', 'FSCSX', 'FSELX', 'FSPHX', 'FBIOX', 'FFNOX']
 s_and_p_500 = ['FXAIX', 'VOO', 'IVV', 'FNILX']
 total_market = ['VTI',  'FZROX', 'FSKAX', 'VOO']
-technology = ['VGT', 'FTEC', 'XITK', 'FSCSX']
+technology = ['VGT', 'FTEC', 'XITK', 'FSCSX', 'QQQ']
 semiconductors = ['SMH', 'XSD', 'FSELX']
 dividends = ['VYM', 'SCHD', 'WFC']
 health = ['VHT', 'FHLC', 'IHI', 'XHE', 'FSPHX', 'FBIOX']

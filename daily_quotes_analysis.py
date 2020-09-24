@@ -10,7 +10,7 @@ import pandas_gbq
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
 
-daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC XITK VHT FHLC IHI XHE VYM SCHD FPBFX FIVFX SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG FNBGX WFC TSLA FSCSX FSELX FSPHX FBIOX FFNOX AAPL"
+daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD FPBFX FIVFX SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG FNBGX WFC TSLA FSCSX FSELX FSPHX FBIOX FFNOX AAPL"
 # daily_data_holdings = "VOO ARKK VTI ARKG WCLD"
 
 ### CATEGORIZING STOCKS
@@ -19,7 +19,7 @@ investment_account = ['VTI', 'FZROX', 'FSKAX', 'VOO', 'IVV', 'FXAIX', 'FNILX', '
 retirement_account = ['FZROX', 'FSKAX', 'FXAIX', 'FNILX', 'FSCSX', 'FSELX', 'FSPHX', 'FBIOX', 'FFNOX']
 s_and_p_500 = ['FXAIX', 'VOO', 'IVV', 'FNILX']
 total_market = ['VTI',  'FZROX', 'FSKAX', 'VOO']
-technology = ['VGT', 'FTEC', 'XITK', 'FSCSX']
+technology = ['VGT', 'FTEC', 'XITK', 'FSCSX', 'QQQ']
 semiconductors = ['SMH', 'XSD', 'FSELX']
 dividends = ['VYM', 'SCHD', 'WFC']
 health = ['VHT', 'FHLC', 'IHI', 'XHE', 'FSPHX', 'FBIOX']
@@ -136,7 +136,9 @@ months_to_buy = temp.groupby(['ticker'])['month'].apply('-'.join).reset_index()
 months_to_buy.columns = ['ticker', 'months_to_buy']
 
 ### GENERATE GROWTH METRICS FOR THE STOCKS
-temp = stock_data_analysis[['adj_close', 'ticker', 'year', 'month']].loc[stock_data_analysis['month']=="Dec"].sort_values(by=['ticker', 'year']).reset_index().copy()
+temp = stock_data_analysis[['adj_close', 'ticker', 'year', 'month', 'date']].loc[stock_data_analysis['month']=="Dec"].sort_values(by=['ticker', 'year']).reset_index().copy()
+temp['max_dec'] = temp.groupby(['ticker', 'year']).date.transform('max').reset_index(drop=True)
+temp = temp[temp['date']==temp['max_dec']][['ticker', 'year', 'month', 'adj_close']].copy()
 temp['lagged_close'] = temp.groupby(by=['ticker'])['adj_close'].shift(1)
 temp['yearly_growth'] = (temp['adj_close'] - temp['lagged_close']) / temp['lagged_close']
 avg_yearly_growth = temp.groupby('ticker')['yearly_growth'].mean().reset_index()
