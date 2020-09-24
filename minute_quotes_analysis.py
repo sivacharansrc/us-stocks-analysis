@@ -3,12 +3,18 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime
 import numpy as np
+import os
 import pandas_gbq
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
+if os.getcwd() == 'C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics':
+    minute_data_holdings = "VOO VTI XITK IHI"
+else:
+    minute_data_holdings = "VTI VOO IVV VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG WFC TSLA AAPL"
 
-minute_data_holdings = "VTI VOO IVV VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG WFC TSLA AAPL"
-# minute_data_holdings = "VOO ARKK VTI ARKG WCLD"
+
+# minute_data_holdings = "VTI VOO IVV VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG WFC TSLA AAPL"
+# minute_data_holdings = "VOO VTI XITK IHI"
 
 ### CATEGORIZING STOCKS
 
@@ -112,4 +118,3 @@ pandas_gbq.to_gbq(summary_data, 'portfolio_data.summary_data', project_id= 'my-p
 
 # PRINTING SUCCESSFUL CODE EXECUTION MESSAGE
 print("Writing to BigQuery over minute_quotes_analysis successfully completed")
-

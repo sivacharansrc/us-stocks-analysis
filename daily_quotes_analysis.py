@@ -3,15 +3,21 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
 import numpy as np
+import os
 import pandas_gbq
 
 
 # Reference: https://www.datacamp.com/community/tutorials/moving-averages-in-pandas
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
+if os.getcwd() == 'C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics':
+    daily_data_holdings = "VOO VTI XITK IHI"
+else:
+    daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD FPBFX FIVFX SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG FNBGX WFC TSLA FSCSX FSELX FSPHX FBIOX FFNOX AAPL"
 
-daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD FPBFX FIVFX SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG FNBGX WFC TSLA FSCSX FSELX FSPHX FBIOX FFNOX AAPL"
-# daily_data_holdings = "VOO ARKK VTI ARKG WCLD"
+
+# daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD FPBFX FIVFX SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG FNBGX WFC TSLA FSCSX FSELX FSPHX FBIOX FFNOX AAPL"
+# daily_data_holdings = "VOO VTI XITK IHI"
 
 ### CATEGORIZING STOCKS
 
@@ -30,7 +36,7 @@ bond = ['BND', 'AGG', 'FNBGX']
 
 ### PREPARING DATA FOR DAILY AVERAGE ###
 
-start_date = str(int(datetime.today().strftime('%Y')) - 10) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')  # Pulling 2 Years of data
+start_date = str(int(datetime.today().strftime('%Y')) - 12) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')  # Pulling 10 Years of data
 daily_df = yf.download(daily_data_holdings, start=start_date, interval="1d")
 daily_df = daily_df.unstack().reset_index()
 daily_df.columns = ['col_name', 'Ticker', 'Date', 'Value']
@@ -43,6 +49,17 @@ daily_df = daily_df.sort_values(by=['ticker', 'date'], axis=0, ascending=True, k
 daily_df['account'] = np.where((daily_df.ticker.isin(investment_account)) & (daily_df.ticker.isin(retirement_account)), "Both Accounts", np.where(daily_df.ticker.isin(investment_account), "Investment Account", "Retirement Account"))
 daily_df['sector'] = np.where(daily_df.ticker.isin(s_and_p_500),'S&P 500', np.where(daily_df.ticker.isin(total_market),'Total Market', np.where(daily_df.ticker.isin(technology),'Technology', np.where(daily_df.ticker.isin(semiconductors),'Semiconductors', np.where(daily_df.ticker.isin(health),'Health Service & Devices', np.where(daily_df.ticker.isin(dividends),'Dividends', np.where(daily_df.ticker.isin(high_growth),'High Growth', np.where(daily_df.ticker.isin(international),'International', np.where(daily_df.ticker.isin(bond),'Bonds', np.where(daily_df.ticker.isin(metals),'Precious Metals','Not Applicable'))))))))))
 stock_data_analysis = daily_df.copy()
+
+### APPLYING FILTERS TO THE DATASET
+
+summary_date_start_filter = int(datetime.today().strftime('%Y')) - 11
+summary_date_end_filter = int(datetime.today().strftime('%Y')) - 1
+stock_data_analysis = stock_data_analysis[stock_data_analysis['date'].dt.year.isin(list(range(summary_date_start_filter, summary_date_end_filter)))]
+
+stock_date_filter = str(int(datetime.today().strftime('%Y')) - 10) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')
+daily_df = daily_df[daily_df['date'] >= stock_date_filter]
+
+price_prediction_data = daily_df[['ticker', 'date', 'adj_close']] .copy()
 
 # CALCULATING MOVING AVERAGES
 # daily_df['sma_50'] = daily_df.groupby(['ticker'])['adj_close'].rolling(window=50).mean().reset_index(drop=True)
@@ -167,6 +184,53 @@ temp['52_week_low'] = temp.groupby('ticker')['low'].transform('min')
 temp['52_week_mean'] = (temp.groupby('ticker')['open'].transform('mean') + temp.groupby('ticker')['close'].transform('mean')) / 2
 temp['52_week_median'] = (temp.groupby('ticker')['open'].transform('median') + temp.groupby('ticker')['close'].transform('median')) / 2
 fifty_two_week_metric = temp[['ticker', '52_week_high', '52_week_low', '52_week_mean', '52_week_median']].drop_duplicates().reset_index(drop=True)
+
+### CODE FOR STOCK PRICE PREDICTION
+
+price_prediction_data['year'] = price_prediction_data.date.dt.year
+price_prediction_data['month'] = price_prediction_data['date'].dt.month
+price_prediction_data['mon'] = price_prediction_data['date'].dt.month_name().str.slice(stop=3)
+
+temp = price_prediction_data.copy()
+temp['median_price'] = temp.groupby(['ticker', 'year', 'month'])['adj_close'].transform('median').reset_index(drop=True)
+temp = temp[['ticker', 'year', 'month', 'mon', 'median_price']].drop_duplicates().sort_values(by=(['ticker', 'year', 'month'])).reset_index(drop=True)
+temp2 = temp.copy() # To be used for calculating the actual price prediction
+temp['cm_12'] = temp.groupby('ticker')['median_price'].shift(12)
+temp['cm_9'] = temp.groupby('ticker')['median_price'].shift(9)
+temp['cm_6'] = temp.groupby('ticker')['median_price'].shift(6)
+temp['cm_3'] = temp.groupby('ticker')['median_price'].shift(3)
+
+temp['cm_12_pct'] = (temp['median_price'] - temp['cm_12']) / temp['cm_12']
+temp['cm_9_pct'] = (temp['median_price'] - temp['cm_9']) / temp['cm_9']
+temp['cm_6_pct'] = (temp['median_price'] - temp['cm_6']) / temp['cm_6']
+temp['cm_3_pct'] = (temp['median_price'] - temp['cm_3']) / temp['cm_3']
+
+temp['change_12_months'] = temp.groupby(['ticker', 'month'])['cm_12_pct'].transform('mean')
+temp['change_9_months'] = temp.groupby(['ticker', 'month'])['cm_9_pct'].transform('mean')
+temp['change_6_months'] = temp.groupby(['ticker', 'month'])['cm_6_pct'].transform('mean')
+temp['change_3_months'] = temp.groupby(['ticker', 'month'])['cm_3_pct'].transform('mean')
+
+base_pct_change_data = temp[['ticker', 'month', 'mon', 'change_12_months',  'change_9_months',  'change_6_months',  'change_3_months']].copy().sort_values(by=(['ticker', 'month'])).drop_duplicates().reset_index(drop=True)
+
+### CALCULATING THE PREDICTED VALUES FOR ACTUAL MONTH
+
+## CALCULATING FOR THE CURRENT MONTH
+
+current_year_month_filter = str(int(datetime.today().strftime('%Y'))) + str(int(datetime.today().strftime('%m')))
+
+month1_filter = np.array([int((datetime.today() - timedelta(days=90)).strftime('%m')), int((datetime.today() - timedelta(days=180)).strftime('%m')), int((datetime.today() - timedelta(days=270)).strftime('%m')), int((datetime.today() - timedelta(days=360)).strftime('%m'))])
+month2_filter = month1_filter + 1
+month3_filter = month1_filter + 2
+
+temp = temp2[(temp2.year >= summary_date_end_filter) & (temp2.year.astype(str) + temp2.month.astype(str) != current_year_month_filter) & (temp2.month.isin(month1_filter))].copy()
+temp['date'] =  (temp['year'].astype(str) +  temp['month'].astype(str).str.pad(width=2, side='left', fillchar='0')).astype(int)
+temp['rank'] = temp.groupby(['ticker'])['date'].rank(method='first', ascending=False).copy()
+temp = temp[temp['rank'] <= 4]
+temp['month_category'] = pd.cut(temp['rank'], bins=[0,1,2,3,4], include_lowest=True, labels=['month1', 'month2', 'month3', 'month4'])
+temp = temp[['ticker', 'median_price', 'month_category']]
+temp = temp.pivot_table(index='ticker', columns='month_category', aggfunc={'median_price':'mean'})
+# temp.columns.name = None
+
 
 ### MERGING ALL SUMMARY DATASET
 
