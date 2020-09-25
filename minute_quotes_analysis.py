@@ -8,7 +8,7 @@ import pandas_gbq
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
 if os.getcwd() == 'C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics':
-    minute_data_holdings = "VOO VTI XITK IHI"
+    minute_data_holdings = "VOO VTI XITK IHI ARKG"
 else:
     minute_data_holdings = "VTI VOO IVV VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG WFC TSLA AAPL"
 
@@ -104,8 +104,11 @@ minute_df = minute_df[cols_to_keep]
 
 # PREPARING THE SUMMARY FILE
 
-summary_data = pd.read_csv("~/my-portfolio-analysis/input-files/summary_data.csv")
-# summary_data = pd.read_csv("C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics\\us-stocks-analysis\\input\\summary_data_new.csv")
+if os.getcwd() == 'C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics':
+    summary_data = pd.read_csv("C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics\\us-stocks-analysis\\input\\summary_data_new.csv")
+else:
+    summary_data = pd.read_csv("~/my-portfolio-analysis/input-files/summary_data.csv")
+
 summary_data = pd.merge(summary_data, data_for_summary, on='ticker', how='inner')
 summary_data = summary_data[['ticker', 'account', 'sector', 'date', 'no_of_months', 'yearly_growth', 'growth_probability', 'months_to_sell', 'months_to_buy', '52_week_high', '52_week_low', '52_week_mean', '52_week_median', 'cm_target_price', 'cm_plus_one_target_price', 'cm_plus_two_target_price', 'close']]
 summary_data = summary_data.rename(columns={"date":"last_update_time", "close":"current_price", "52_week_high":"five_two_weeks_high", "52_week_low":"five_two_weeks_low", "52_week_mean":"five_two_weeks_mean", "52_week_median":"five_two_weeks_median"})

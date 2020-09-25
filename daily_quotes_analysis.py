@@ -2,6 +2,7 @@
 import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
+from dateutil.relativedelta import *
 import numpy as np
 import os
 import pandas_gbq
@@ -11,7 +12,7 @@ import pandas_gbq
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
 if os.getcwd() == 'C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics':
-    daily_data_holdings = "VOO VTI XITK IHI"
+    daily_data_holdings = "VOO VTI XITK IHI ARKG"
 else:
     daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD FPBFX FIVFX SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG FNBGX WFC TSLA FSCSX FSELX FSPHX FBIOX FFNOX AAPL"
 
@@ -52,14 +53,14 @@ stock_data_analysis = daily_df.copy()
 
 ### APPLYING FILTERS TO THE DATASET
 
-summary_date_start_filter = int(datetime.today().strftime('%Y')) - 11
-summary_date_end_filter = int(datetime.today().strftime('%Y')) - 1
-stock_data_analysis = stock_data_analysis[stock_data_analysis['date'].dt.year.isin(list(range(summary_date_start_filter, summary_date_end_filter)))]
+summary_date_start_filter = int(datetime.today().strftime('%Y')) - 10 # Filter 10 Years from CY-1
+summary_date_end_filter = int(datetime.today().strftime('%Y'))-1 # CY-1
+stock_data_analysis = stock_data_analysis[stock_data_analysis['date'].dt.year.isin(list(range(summary_date_start_filter, summary_date_end_filter+1)))]
 
 stock_date_filter = str(int(datetime.today().strftime('%Y')) - 10) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')
 daily_df = daily_df[daily_df['date'] >= stock_date_filter]
 
-price_prediction_data = daily_df[['ticker', 'date', 'adj_close']] .copy()
+price_prediction_data = daily_df[['ticker', 'date', 'adj_close']].copy().reset_index(drop=True)
 
 # CALCULATING MOVING AVERAGES
 # daily_df['sma_50'] = daily_df.groupby(['ticker'])['adj_close'].rolling(window=50).mean().reset_index(drop=True)
@@ -252,7 +253,7 @@ temp = temp[['ticker', 'median_price', 'month_category']]
 temp = temp.pivot_table(index='ticker', columns='month_category', aggfunc={'median_price':'mean'})
 temp.columns = temp.columns.droplevel(0) # This is to remove the median from the column level
 temp = pd.DataFrame(temp.to_records()) # This will remove any multilevel indexes, and also convert the index to column and reset index
-temp['month'] = int(datetime.today().strftime('%m')) + 1
+temp['month'] = int((datetime.today()+relativedelta(months=+1)).strftime('%m'))
 
 current_month_one_price = pd.merge(temp, base_pct_change_data, how='inner', on=['ticker', 'month'])
 current_month_one_price['cm_plus_one_target_price'] =  ((current_month_one_price['month3']+(current_month_one_price['month3']*current_month_one_price['change_3_months'])) + \
@@ -274,7 +275,7 @@ temp = temp[['ticker', 'median_price', 'month_category']]
 temp = temp.pivot_table(index='ticker', columns='month_category', aggfunc={'median_price':'mean'})
 temp.columns = temp.columns.droplevel(0) # This is to remove the median from the column level
 temp = pd.DataFrame(temp.to_records()) # This will remove any multilevel indexes, and also convert the index to column and reset index
-temp['month'] = int(datetime.today().strftime('%m')) + 2
+temp['month'] = int((datetime.today()+relativedelta(months=+2)).strftime('%m'))
 
 current_month_two_price = pd.merge(temp, base_pct_change_data, how='inner', on=['ticker', 'month'])
 current_month_two_price['cm_plus_two_target_price'] =  ((current_month_two_price['month3']+(current_month_two_price['month3']*current_month_two_price['change_3_months'])) + \
@@ -297,13 +298,15 @@ summary_data = pd.merge(summary_data, growth_metrics, on='ticker', how='inner')
 summary_data = pd.merge(summary_data, months_to_sell, on='ticker', how='inner')
 summary_data = pd.merge(summary_data, months_to_buy, on='ticker', how='inner')
 summary_data = pd.merge(summary_data, fifty_two_week_metric, on='ticker', how='inner')
-summary_data = pd.merge(summary_data, price_predictions, on='ticker', how='inner')
+summary_data = pd.merge(summary_data, price_predictions, on='ticker', how='left')
 # summary_data['target_price'] = ((summary_data['52_week_high'] * 1) + (summary_data['52_week_low'] * 1) + (summary_data['52_week_mean'] * 2) + summary_data['52_week_median'] * 2.5) / 6.5
 
 ### WRITING DATA TO LOCAL DRIVE
-summary_data.to_csv("~/my-portfolio-analysis/input-files/summary_data.csv", index=False)
-# summary_data.to_csv("C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics\\us-stocks-analysis\\input\\summary_data_new.csv", index=False)
 
+if os.getcwd() == 'C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics':
+    summary_data.to_csv("C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics\\us-stocks-analysis\\input\\summary_data_new.csv", index=False)
+else:
+    summary_data.to_csv("~/my-portfolio-analysis/input-files/summary_data.csv", index=False)
 
 
 # WRITING PANDAS DATAFRAME TO BIGQUERY DATASET
