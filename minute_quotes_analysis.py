@@ -107,9 +107,9 @@ minute_df = minute_df[cols_to_keep]
 summary_data = pd.read_csv("~/my-portfolio-analysis/input-files/summary_data.csv")
 # summary_data = pd.read_csv("C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics\\us-stocks-analysis\\input\\summary_data_new.csv")
 summary_data = pd.merge(summary_data, data_for_summary, on='ticker', how='inner')
-summary_data = summary_data[['ticker', 'account', 'sector', 'date', 'no_of_months', 'yearly_growth', 'growth_probability', 'months_to_sell', 'months_to_buy', '52_week_high', '52_week_low', '52_week_mean', '52_week_median', 'target_price', 'close']]
+summary_data = summary_data[['ticker', 'account', 'sector', 'date', 'no_of_months', 'yearly_growth', 'growth_probability', 'months_to_sell', 'months_to_buy', '52_week_high', '52_week_low', '52_week_mean', '52_week_median', 'cm_target_price', 'cm_plus_one_target_price', 'cm_plus_two_target_price', 'close']]
 summary_data = summary_data.rename(columns={"date":"last_update_time", "close":"current_price", "52_week_high":"five_two_weeks_high", "52_week_low":"five_two_weeks_low", "52_week_mean":"five_two_weeks_mean", "52_week_median":"five_two_weeks_median"})
-summary_data['pct_deviation_from_target'] = (summary_data.current_price - summary_data.target_price) / summary_data.target_price
+summary_data['pct_deviation_from_target'] = -(summary_data.cm_target_price - summary_data.current_price) / summary_data.cm_target_price
 
 # WRITING PANDAS DATAFRAME TO BIGQUERY DATASET
 
