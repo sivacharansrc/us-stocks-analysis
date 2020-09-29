@@ -1,8 +1,8 @@
 ### INITIALIZING THE REQUIRED LIBRARIES
 import yfinance as yf
 import pandas as pd
-from datetime import datetime, timedelta
-from dateutil.relativedelta import *
+from datetime import datetime, timedelta, date
+from dateutil.relativedelta import relativedelta
 import numpy as np
 import os
 import pandas_gbq
@@ -218,8 +218,9 @@ base_pct_change_data = temp[['ticker', 'month', 'mon', 'change_12_months',  'cha
 ## CALCULATING FOR THE CURRENT MONTH
 
 current_year_month_filter = str(int(datetime.today().strftime('%Y'))) + str(int(datetime.today().strftime('%m')))
+current_dt = date(int(datetime.today().strftime('%Y')), int(datetime.today().strftime('%m')), 1)
 
-month1_filter = np.array([int((datetime.today() - timedelta(days=90)).strftime('%m')), int((datetime.today() - timedelta(days=180)).strftime('%m')), int((datetime.today() - timedelta(days=270)).strftime('%m')), int((datetime.today() - timedelta(days=360)).strftime('%m'))])
+month1_filter = np.array([int((current_dt - relativedelta(months=3)).strftime('%m')), int((current_dt - relativedelta(months=6)).strftime('%m')), int((current_dt - relativedelta(months=9)).strftime('%m')), int((current_dt - relativedelta(months=12)).strftime('%m'))])
 month2_filter = month1_filter + 1
 month3_filter = month1_filter + 2
 
