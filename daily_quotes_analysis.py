@@ -235,11 +235,12 @@ temp.columns = temp.columns.droplevel(0) # This is to remove the median from the
 temp = pd.DataFrame(temp.to_records()) # This will remove any multilevel indexes, and also convert the index to column and reset index
 temp['month'] = int(datetime.today().strftime('%m'))
 
-current_month_price = pd.merge(temp, base_pct_change_data, how='inner', on=['ticker', 'month'])
-current_month_price['cm_target_price'] =  ((current_month_price['month3']+(current_month_price['month3']*current_month_price['change_3_months'])) + \
-    (current_month_price['month6']+(current_month_price['month6']*current_month_price['change_6_months'])) + \
-        (current_month_price['month9']+(current_month_price['month3']*current_month_price['change_9_months'])) + \
-            (current_month_price['month12']+(current_month_price['month12']*current_month_price['change_12_months']))) / 4
+current_month_price = pd.merge(temp, base_pct_change_data, how='inner', on=['ticker', 'month']).reset_index(drop=True)
+current_month_price['change_3_months_value'] = (current_month_price['month3']+(current_month_price['month3']*current_month_price['change_3_months']))
+current_month_price['change_6_months_value'] = (current_month_price['month6']+(current_month_price['month6']*current_month_price['change_6_months']))
+current_month_price['change_9_months_value'] = (current_month_price['month9']+(current_month_price['month3']*current_month_price['change_9_months']))
+current_month_price['change_12_months_value'] = (current_month_price['month12']+(current_month_price['month12']*current_month_price['change_12_months']))
+current_month_price['cm_target_price'] = current_month_price[['change_3_months_value', 'change_6_months_value', 'change_9_months_value', 'change_12_months_value']].mean(axis=1)
 
 current_month_price = current_month_price[['ticker', 'cm_target_price']].reset_index(drop=True)
 
@@ -256,11 +257,12 @@ temp.columns = temp.columns.droplevel(0) # This is to remove the median from the
 temp = pd.DataFrame(temp.to_records()) # This will remove any multilevel indexes, and also convert the index to column and reset index
 temp['month'] = int((datetime.today()+relativedelta(months=+1)).strftime('%m'))
 
-current_month_one_price = pd.merge(temp, base_pct_change_data, how='inner', on=['ticker', 'month'])
-current_month_one_price['cm_plus_one_target_price'] =  ((current_month_one_price['month3']+(current_month_one_price['month3']*current_month_one_price['change_3_months'])) + \
-    (current_month_one_price['month6']+(current_month_one_price['month6']*current_month_one_price['change_6_months'])) + \
-        (current_month_one_price['month9']+(current_month_one_price['month3']*current_month_one_price['change_9_months'])) + \
-            (current_month_one_price['month12']+(current_month_one_price['month12']*current_month_one_price['change_12_months']))) / 4
+current_month_one_price = pd.merge(temp, base_pct_change_data, how='inner', on=['ticker', 'month']).reset_index(drop=True)
+current_month_one_price['change_3_months_value'] = (current_month_one_price['month3']+(current_month_one_price['month3']*current_month_one_price['change_3_months']))
+current_month_one_price['change_6_months_value'] = (current_month_one_price['month6']+(current_month_one_price['month6']*current_month_one_price['change_6_months']))
+current_month_one_price['change_9_months_value'] = (current_month_one_price['month9']+(current_month_one_price['month3']*current_month_one_price['change_9_months']))
+current_month_one_price['change_12_months_value'] = (current_month_one_price['month12']+(current_month_one_price['month12']*current_month_one_price['change_12_months']))
+current_month_one_price['cm_plus_one_target_price'] = current_month_one_price[['change_3_months_value', 'change_6_months_value', 'change_9_months_value', 'change_12_months_value']].mean(axis=1)
 
 current_month_one_price = current_month_one_price[['ticker', 'cm_plus_one_target_price']].reset_index(drop=True)
 
@@ -278,18 +280,19 @@ temp.columns = temp.columns.droplevel(0) # This is to remove the median from the
 temp = pd.DataFrame(temp.to_records()) # This will remove any multilevel indexes, and also convert the index to column and reset index
 temp['month'] = int((datetime.today()+relativedelta(months=+2)).strftime('%m'))
 
-current_month_two_price = pd.merge(temp, base_pct_change_data, how='inner', on=['ticker', 'month'])
-current_month_two_price['cm_plus_two_target_price'] =  ((current_month_two_price['month3']+(current_month_two_price['month3']*current_month_two_price['change_3_months'])) + \
-    (current_month_two_price['month6']+(current_month_two_price['month6']*current_month_two_price['change_6_months'])) + \
-        (current_month_two_price['month9']+(current_month_two_price['month3']*current_month_two_price['change_9_months'])) + \
-            (current_month_two_price['month12']+(current_month_two_price['month12']*current_month_two_price['change_12_months']))) / 4
+current_month_two_price = pd.merge(temp, base_pct_change_data, how='inner', on=['ticker', 'month']).reset_index(drop=True)
+current_month_two_price['change_3_months_value'] = (current_month_two_price['month3']+(current_month_two_price['month3']*current_month_two_price['change_3_months']))
+current_month_two_price['change_6_months_value'] = (current_month_two_price['month6']+(current_month_two_price['month6']*current_month_two_price['change_6_months']))
+current_month_two_price['change_9_months_value'] = (current_month_two_price['month9']+(current_month_two_price['month3']*current_month_two_price['change_9_months']))
+current_month_two_price['change_12_months_value'] = (current_month_two_price['month12']+(current_month_two_price['month12']*current_month_two_price['change_12_months']))
+current_month_two_price['cm_plus_two_target_price'] = current_month_two_price[['change_3_months_value', 'change_6_months_value', 'change_9_months_value', 'change_12_months_value']].mean(axis=1)
 
 current_month_two_price = current_month_two_price[['ticker', 'cm_plus_two_target_price']].reset_index(drop=True)
 
 ### MERGING ALL THE PREDICTED PRICE DATASET
 
-price_predictions = pd.merge(current_month_price, current_month_one_price, how='inner', on='ticker')
-price_predictions = pd.merge(price_predictions, current_month_two_price, how='inner', on='ticker')
+price_predictions = pd.merge(current_month_price, current_month_one_price, how='left', on='ticker')
+price_predictions = pd.merge(price_predictions, current_month_two_price, how='left', on='ticker')
 
 ### MERGING ALL SUMMARY DATASET
 
