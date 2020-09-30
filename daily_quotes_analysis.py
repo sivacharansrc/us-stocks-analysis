@@ -60,7 +60,7 @@ stock_data_analysis = stock_data_analysis[stock_data_analysis['date'].dt.year.is
 stock_date_filter = str(int(datetime.today().strftime('%Y')) - 10) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')
 daily_df = daily_df[daily_df['date'] >= stock_date_filter]
 
-price_prediction_data = daily_df[['ticker', 'date', 'adj_close']].copy().reset_index(drop=True)
+price_prediction_data = daily_df[['ticker', 'date', 'adj_close', 'high', 'low']].copy().reset_index(drop=True)
 
 # CALCULATING MOVING AVERAGES
 # daily_df['sma_50'] = daily_df.groupby(['ticker'])['adj_close'].rolling(window=50).mean().reset_index(drop=True)
@@ -176,14 +176,14 @@ total_data_points = temp[['ticker', 'no_of_months']].copy()
 
 ### SUBSETTING 1 YR DATA TO GENERATE 52 WEEK METRICS
 
-temp = stock_data_analysis[['ticker', 'date', 'adj_close', 'close', 'high', 'low', 'open']].copy().reset_index(drop=True)
+temp = price_prediction_data.copy().reset_index(drop=True)
 max_period = temp.date.max()
 filter_period = np.where(max_period.year % 4 == 0, max_period - timedelta(days=366), max_period - timedelta(days=365))
 temp = temp[temp.date >= filter_period]
 temp['52_week_high'] = temp.groupby('ticker')['high'].transform('max')
 temp['52_week_low'] = temp.groupby('ticker')['low'].transform('min')
-temp['52_week_mean'] = (temp.groupby('ticker')['open'].transform('mean') + temp.groupby('ticker')['close'].transform('mean')) / 2
-temp['52_week_median'] = (temp.groupby('ticker')['open'].transform('median') + temp.groupby('ticker')['close'].transform('median')) / 2
+temp['52_week_mean'] = temp.groupby('ticker')['adj_close'].transform('mean')
+temp['52_week_median'] = temp.groupby('ticker')['adj_close'].transform('median')
 fifty_two_week_metric = temp[['ticker', '52_week_high', '52_week_low', '52_week_mean', '52_week_median']].drop_duplicates().reset_index(drop=True)
 
 ### CODE FOR STOCK PRICE PREDICTION
