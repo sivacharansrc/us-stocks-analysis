@@ -11,14 +11,15 @@ import pandas_gbq
 # Reference: https://www.datacamp.com/community/tutorials/moving-averages-in-pandas
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
-if os.getcwd() == 'C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics':
+
+local_drive_paths = ['C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics', 'C:\\Users\\sivac\\Documents\\Analytics']
+current_local = os.getcwd()
+
+if os.getcwd() in local_drive_paths:
     daily_data_holdings = "VOO VTI XITK IHI ARKG"
 else:
     daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD FPBFX FIVFX SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG FNBGX WFC TSLA FSCSX FSELX FSPHX FBIOX FFNOX AAPL"
 
-
-# daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD FPBFX FIVFX SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG FNBGX WFC TSLA FSCSX FSELX FSPHX FBIOX FFNOX AAPL"
-# daily_data_holdings = "VOO VTI XITK IHI"
 
 ### CATEGORIZING STOCKS
 
@@ -307,11 +308,12 @@ summary_data = pd.merge(summary_data, price_predictions, on='ticker', how='left'
 
 ### WRITING DATA TO LOCAL DRIVE
 
-if os.getcwd() == 'C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics':
-    summary_data.to_csv("C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics\\us-stocks-analysis\\input\\summary_data_new.csv", index=False)
+if os.getcwd() in local_drive_paths:
+    summary_data.to_csv(current_local + "\\us-stocks-analysis\\input\\summary_data_new.csv", index=False)
 else:
     summary_data.to_csv("~/my-portfolio-analysis/input-files/summary_data.csv", index=False)
 
+print("Summary data file successfully exported to local drive")
 
 # WRITING PANDAS DATAFRAME TO BIGQUERY DATASET
 

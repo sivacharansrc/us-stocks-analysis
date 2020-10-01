@@ -7,14 +7,15 @@ import os
 import pandas_gbq
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
-if os.getcwd() == 'C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics':
+local_drive_paths = ['C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics', 'C:\\Users\\sivac\\Documents\\Analytics']
+current_local = os.getcwd()
+
+if os.getcwd() in local_drive_paths:
     minute_data_holdings = "VOO VTI XITK IHI ARKG"
 else:
     minute_data_holdings = "VTI VOO IVV VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG WFC TSLA AAPL"
 
 
-# minute_data_holdings = "VTI VOO IVV VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG WFC TSLA AAPL"
-# minute_data_holdings = "VOO VTI XITK IHI"
 
 ### CATEGORIZING STOCKS
 
@@ -104,8 +105,8 @@ minute_df = minute_df[cols_to_keep]
 
 # PREPARING THE SUMMARY FILE
 
-if os.getcwd() == 'C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics':
-    summary_data = pd.read_csv("C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics\\us-stocks-analysis\\input\\summary_data_new.csv")
+if os.getcwd() in local_drive_paths:
+    summary_data = pd.read_csv(current_local + "\\us-stocks-analysis\\input\\summary_data_new.csv")
 else:
     summary_data = pd.read_csv("~/my-portfolio-analysis/input-files/summary_data.csv")
 
