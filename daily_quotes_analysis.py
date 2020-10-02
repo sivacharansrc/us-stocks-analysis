@@ -12,10 +12,10 @@ import pandas_gbq
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
 
-local_drive_paths = ['C:\\Users\\ssoma\\OneDrive - Monsanto\\Migrated from My PC\\Documents\\Analytics', 'C:\\Users\\sivac\\Documents\\Analytics']
+
 current_local = os.getcwd()
 
-if os.getcwd() in local_drive_paths:
+if current_local[0:2] == 'C:':
     daily_data_holdings = "VOO VTI XITK IHI ARKG"
 else:
     daily_data_holdings = "VTI FZROX FSKAX VOO IVV FXAIX FNILX VGT FTEC QQQ XITK VHT FHLC IHI XHE VYM SCHD FPBFX FIVFX SMH XSD ARKK ARKW ARKF ARKQ ARKG WCLD SKYY SLV GLDM IAU BND AGG FNBGX WFC TSLA FSCSX FSELX FSPHX FBIOX FFNOX AAPL"
@@ -321,7 +321,7 @@ summary_data = pd.merge(summary_data, price_predictions, on='ticker', how='left'
 
 ### WRITING DATA TO LOCAL DRIVE
 
-if os.getcwd() in local_drive_paths:
+if current_local[0:2] == 'C:':
     summary_data.to_csv(current_local + "\\us-stocks-analysis\\input\\summary_data_new.csv", index=False)
 else:
     summary_data.to_csv("~/my-portfolio-analysis/input-files/summary_data.csv", index=False)
