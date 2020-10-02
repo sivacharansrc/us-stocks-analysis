@@ -225,6 +225,13 @@ month1_filter = np.array([int((current_dt - relativedelta(months=3)).strftime('%
 month2_filter = month1_filter + 1
 month3_filter = month1_filter + 2
 
+# FIXING THE WEIGHTS FOR THE MONTHS
+wt_3 = 2
+wt_6 = 1
+wt_9 = 1
+wt_12 = 0.75
+wt_list = [wt_3, wt_6, wt_9, wt_12]
+
 temp = temp2[(temp2.year >= summary_date_end_filter) & (temp2.year.astype(str) + temp2.month.astype(str) != current_year_month_filter) & (temp2.month.isin(month1_filter))].copy()
 temp['date'] =  (temp['year'].astype(str) +  temp['month'].astype(str).str.pad(width=2, side='left', fillchar='0')).astype(int)
 temp['rank'] = temp.groupby(['ticker'])['date'].rank(method='first', ascending=False).copy()
@@ -241,7 +248,9 @@ current_month_price['change_3_months_value'] = (current_month_price['month3']+(c
 current_month_price['change_6_months_value'] = (current_month_price['month6']+(current_month_price['month6']*current_month_price['change_6_months']))
 current_month_price['change_9_months_value'] = (current_month_price['month9']+(current_month_price['month3']*current_month_price['change_9_months']))
 current_month_price['change_12_months_value'] = (current_month_price['month12']+(current_month_price['month12']*current_month_price['change_12_months']))
-current_month_price['cm_target_price'] = current_month_price[['change_3_months_value', 'change_6_months_value', 'change_9_months_value', 'change_12_months_value']].mean(axis=1)
+data = np.array(current_month_price[['change_3_months_value', 'change_6_months_value', 'change_9_months_value', 'change_12_months_value']]) # USING NUMPY AS WEIGHTED AVERAGE IS NOT AVAILABLE WITH PANDAS
+masked_data = np.ma.masked_array(data, np.isnan(data)) # USING A MASKED ARRAY TO OVERCOME ISSUES WITH NA
+current_month_price['cm_target_price'] = np.ma.average(masked_data, axis=1, weights=wt_list).filled(np.nan)
 
 current_month_price = current_month_price[['ticker', 'cm_target_price']].reset_index(drop=True)
 
@@ -263,7 +272,9 @@ current_month_one_price['change_3_months_value'] = (current_month_one_price['mon
 current_month_one_price['change_6_months_value'] = (current_month_one_price['month6']+(current_month_one_price['month6']*current_month_one_price['change_6_months']))
 current_month_one_price['change_9_months_value'] = (current_month_one_price['month9']+(current_month_one_price['month3']*current_month_one_price['change_9_months']))
 current_month_one_price['change_12_months_value'] = (current_month_one_price['month12']+(current_month_one_price['month12']*current_month_one_price['change_12_months']))
-current_month_one_price['cm_plus_one_target_price'] = current_month_one_price[['change_3_months_value', 'change_6_months_value', 'change_9_months_value', 'change_12_months_value']].mean(axis=1)
+data = np.array(current_month_one_price[['change_3_months_value', 'change_6_months_value', 'change_9_months_value', 'change_12_months_value']]) # USING NUMPY AS WEIGHTED AVERAGE IS NOT AVAILABLE WITH PANDAS
+masked_data = np.ma.masked_array(data, np.isnan(data)) # USING A MASKED ARRAY TO OVERCOME ISSUES WITH NA
+current_month_one_price['cm_plus_one_target_price'] = np.ma.average(masked_data, axis=1, weights=wt_list).filled(np.nan)
 
 current_month_one_price = current_month_one_price[['ticker', 'cm_plus_one_target_price']].reset_index(drop=True)
 
@@ -286,7 +297,9 @@ current_month_two_price['change_3_months_value'] = (current_month_two_price['mon
 current_month_two_price['change_6_months_value'] = (current_month_two_price['month6']+(current_month_two_price['month6']*current_month_two_price['change_6_months']))
 current_month_two_price['change_9_months_value'] = (current_month_two_price['month9']+(current_month_two_price['month3']*current_month_two_price['change_9_months']))
 current_month_two_price['change_12_months_value'] = (current_month_two_price['month12']+(current_month_two_price['month12']*current_month_two_price['change_12_months']))
-current_month_two_price['cm_plus_two_target_price'] = current_month_two_price[['change_3_months_value', 'change_6_months_value', 'change_9_months_value', 'change_12_months_value']].mean(axis=1)
+data = np.array(current_month_two_price[['change_3_months_value', 'change_6_months_value', 'change_9_months_value', 'change_12_months_value']]) # USING NUMPY AS WEIGHTED AVERAGE IS NOT AVAILABLE WITH PANDAS
+masked_data = np.ma.masked_array(data, np.isnan(data)) # USING A MASKED ARRAY TO OVERCOME ISSUES WITH NA
+current_month_two_price['cm_plus_two_target_price'] = np.ma.average(masked_data, axis=1, weights=wt_list).filled(np.nan)
 
 current_month_two_price = current_month_two_price[['ticker', 'cm_plus_two_target_price']].reset_index(drop=True)
 
