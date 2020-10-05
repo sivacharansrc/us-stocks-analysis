@@ -135,11 +135,12 @@ temp = stock_data_analysis[['high', 'ticker', 'year', 'month']].copy().reset_ind
 temp['mean_highs'] = temp.groupby(['ticker', 'year', 'month'])['high'].transform('mean').reset_index(drop=True)
 temp['rank'] = temp.groupby(['ticker', 'year'])['mean_highs'].rank(method='dense', ascending=False)
 temp = temp[temp['rank'] <= 3].sort_values(by=['ticker', 'year', 'rank'], ascending=False)
-temp = temp[['ticker', 'year', 'month', 'rank']].drop_duplicates()
-temp = temp.pivot_table(index=['ticker', 'month'], aggfunc={'year': 'count'}).sort_values(by='year', ascending=False).reset_index()
-temp['rank'] = temp.groupby(['ticker'])['year'].rank(method='first', ascending=False)
-temp = temp[temp['rank'] <= 4].copy()
-temp['months_to_sell'] = temp['month'] + " (" + temp['year'].astype(int).astype(str) + ")"
+temp = temp[['ticker', 'year', 'month', 'rank']].drop_duplicates().reset_index(drop=True)
+temp['month_count'] = temp.groupby(['ticker', 'month'])['year'].transform('count')
+temp = temp.pivot_table(index=['ticker', 'month', 'rank', 'month_count'], aggfunc={'year': 'count'}).sort_values(by=['ticker', 'rank', 'year'], ascending=[True, True, False]).reset_index()
+temp['rank1'] = temp.groupby(['ticker', 'rank'])['year'].rank(method='dense', ascending=False)
+temp = temp[temp['rank1'] == 1].copy().reset_index(drop=True)
+temp['months_to_sell'] = temp['month'] + " (" + temp['month_count'].astype(int).astype(str) + ", " + temp['year'].astype(int).astype(str) + ")"
 months_to_sell = temp.groupby(['ticker'])['months_to_sell'].apply(', '.join).reset_index()
 
 
@@ -149,10 +150,11 @@ temp['mean_lows'] = temp.groupby(['ticker', 'year', 'month'])['low'].transform('
 temp['rank'] = temp.groupby(['ticker', 'year'])['mean_lows'].rank(method='dense', ascending=True)
 temp = temp[temp['rank'] <= 3].sort_values(by=['ticker', 'year', 'rank'], ascending=True)
 temp = temp[['ticker', 'year', 'month', 'rank']].drop_duplicates()
-temp = temp.pivot_table(index=['ticker', 'month'], aggfunc={'year': 'count'}).sort_values(by=['ticker', 'year'], ascending=False).reset_index()
-temp['rank'] = temp.groupby(['ticker'])['year'].rank(method='first', ascending=False).copy()
-temp = temp[temp['rank'] <= 4].sort_values(by=['ticker', 'rank'], ascending=True).copy()
-temp['months_to_buy'] = temp['month'] + " (" + temp['year'].astype(int).astype(str) + ")"
+temp['month_count'] = temp.groupby(['ticker', 'month'])['year'].transform('count')
+temp = temp.pivot_table(index=['ticker', 'month', 'rank', 'month_count'], aggfunc={'year': 'count'}).sort_values(by=['ticker', 'rank', 'year'], ascending=[True, True, False]).reset_index()
+temp['rank1'] = temp.groupby(['ticker', 'rank'])['year'].rank(method='dense', ascending=False)
+temp = temp[temp['rank1'] == 1].copy().reset_index(drop=True)
+temp['months_to_buy'] = temp['month'] + " (" + temp['month_count'].astype(int).astype(str) + ", " + temp['year'].astype(int).astype(str) + ")"
 months_to_buy = temp.groupby(['ticker'])['months_to_buy'].apply(', '.join).reset_index()
 
 
