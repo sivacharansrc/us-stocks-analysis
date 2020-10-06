@@ -1,2 +1,3 @@
 # Ignore staging large files
 input/all-stocks-data/
+input/big-query-key/

@@ -334,5 +334,31 @@ print("Summary data file successfully exported to local drive")
 
 pandas_gbq.to_gbq(daily_df, 'portfolio_data.daily_quotes_analysis', project_id= 'my-portfolio-analysis', if_exists='replace')
 
+### CREATING PYTHON BIGQUERY CLIENT OBJECT
+
+# import google.auth
+# from google.cloud import bigquery
+# from google.oauth2 import service_account
+# from google.cloud import bigquery_storage_v1
+
+# credentials = service_account.Credentials.from_service_account_file(current_local + "\\us-stocks-analysis\\input\\big-query-key\\bq-key.json")
+# project_id = 'my-portfolio-analysis'
+# bqclient = bigquery.Client(credentials=credentials, project=project_id)
+
+# bqstorageclient = bigquery_storage_v1beta1.BigQueryStorageClient(credentials=credentials)
+
+# query_job = client.query("""
+#    SELECT *
+#    FROM portfolio_data.summary_data
+#    """)
+
+# results = query_job.result()
+
+# dataframe = (
+#     bqclient.query(query_string)
+#     .result()
+#     .to_dataframe(bqstorage_client=bqstorageclient)
+# )
+
 # PRINTING SUCCESSFUL CODE EXECUTION MESSAGE
 print("Writing to BigQuery over daily_quotes_analysis successfully completed")
