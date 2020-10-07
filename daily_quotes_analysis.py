@@ -6,6 +6,7 @@ from dateutil.relativedelta import relativedelta
 import numpy as np
 import os
 import pandas_gbq
+import pyarrow
 
 
 # Reference: https://www.datacamp.com/community/tutorials/moving-averages-in-pandas
@@ -336,29 +337,52 @@ pandas_gbq.to_gbq(daily_df, 'portfolio_data.daily_quotes_analysis', project_id= 
 
 ### CREATING PYTHON BIGQUERY CLIENT OBJECT
 
-# import google.auth
+
 # from google.cloud import bigquery
 # from google.oauth2 import service_account
-# from google.cloud import bigquery_storage_v1
+
 
 # credentials = service_account.Credentials.from_service_account_file(current_local + "\\us-stocks-analysis\\input\\big-query-key\\bq-key.json")
 # project_id = 'my-portfolio-analysis'
-# bqclient = bigquery.Client(credentials=credentials, project=project_id)
+# dataset = 'portfolio_data'
+# table = 'daily_quotes_test'
+# client = bigquery.Client(credentials=credentials, project=project_id)
 
-# bqstorageclient = bigquery_storage_v1beta1.BigQueryStorageClient(credentials=credentials)
-
-# query_job = client.query("""
-#    SELECT *
-#    FROM portfolio_data.summary_data
-#    """)
-
-# results = query_job.result()
-
-# dataframe = (
-#     bqclient.query(query_string)
-#     .result()
-#     .to_dataframe(bqstorage_client=bqstorageclient)
+# job_config = bigquery.LoadJobConfig(
+#     schema = [
+#         bigquery.SchemaField("ticker", "STRING"),
+#         bigquery.SchemaField("date", "TIMESTAMP"),
+#         bigquery.SchemaField("adj_close", "FLOAT64"),
+#         bigquery.SchemaField("close", "FLOAT64"),
+#         bigquery.SchemaField("high", "FLOAT64"),
+#         bigquery.SchemaField("low", "FLOAT64"),
+#         bigquery.SchemaField("open", "FLOAT64"),
+#         bigquery.SchemaField("volume", "FLOAT64"),
+#         bigquery.SchemaField("account", "STRING"),
+#         bigquery.SchemaField("sector", "STRING"),
+#         bigquery.SchemaField("daily_change_pct", "FLOAT64"),
+#         bigquery.SchemaField("date_filter", "STRING"),
+#         bigquery.SchemaField("relative_strength_index", "FLOAT64"),
+#         bigquery.SchemaField("change_since_52_weeks", "FLOAT64"),
+#         bigquery.SchemaField("ema_12", "FLOAT64"),
+#         bigquery.SchemaField("ema_26", "FLOAT64"),
+#         bigquery.SchemaField("macd_line", "FLOAT64"),
+#         bigquery.SchemaField("signal_line", "FLOAT64"),
+#         bigquery.SchemaField("macd_histogram", "FLOAT64")
+#     ],
+#     time_partitioning = bigquery.TimePartitioning(
+#         type_=bigquery.TimePartitioningType.DAY,
+#         field="date"
+#     ),
+#     write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE
 # )
+
+
+# load_job = client.load_table_from_dataframe(
+#     daily_df, '.'.join([project_id, dataset, table]), job_config=job_config
+# )
+
+# result = load_job.result()
 
 # PRINTING SUCCESSFUL CODE EXECUTION MESSAGE
 print("Writing to BigQuery over daily_quotes_analysis successfully completed")
