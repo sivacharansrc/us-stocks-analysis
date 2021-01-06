@@ -6,9 +6,8 @@ import torch
 import os
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta, date
-# from dateutil.relativedelta import relativedelta
-# import numpy as np
-# import os
+from forex_python.converter import CurrencyRates # https://forex-python.readthedocs.io/en/latest/usage.
+import numpy as np
 
 ### OTHER REFERENCES ###
 # https://towardsdatascience.com/neural-prophet-a-time-series-modeling-library-based-on-neural-networks-dd02dc8d868d
@@ -33,8 +32,14 @@ gold_prices.columns = col_names
 gold_prices = gold_prices.sort_values(by=['date'], axis=0, ascending=True, kind='mergesort').reset_index(drop=True) #mergesort works better on pre-sorted items. For most other cases, quicksort works good
 
 gold_prices = gold_prices[['date', 'adj_close']].reset_index(drop=True)
-gold_prices.rename(columns={"date":"ds", "adj_close":"y"}, inplace=True)
 
+
+date_object = pd.date_range(start=start_date,end=datetime.today())
+date_object = pd.DataFrame(date_object, columns=['date']) 
+gold_prices = pd.merge(date_object, gold_prices, how="left", on="date").reset_index(drop=True)
+gold_prices['adj_close'] = np.where(gold_prices['adj_close'].isna(), np.where(np.isnan(gold_prices['adj_close'].shift(1)), gold_prices['adj_close'].shift(-1), gold_prices['adj_close'].shift(1)), gold_prices['adj_close'])
+
+gold_prices.rename(columns={"date":"ds", "adj_close":"y"}, inplace=True)
 
 model = NeuralProphet(growth="linear",  # Determine trend types: 'linear', 'discontinuous', 'off'
                       changepoints=None, # list of dates that may include change points (None -> automatic )
@@ -71,11 +76,8 @@ plt.show()
 
 forecast[(forecast.ds > '2021-01-05') & (forecast.ds < '2021-01-12')]
 
-# date_object = pd.date_range(start=start_date,end=datetime.today())
-# date_object = pd.DataFrame(date_object, columns=['date']) 
-# gold_prices = gold_prices[['date', 'adj_close']]
-# gold_prices = pd.merge(date_object, gold_prices, how="left", on="date").reset_index(drop=True)
-# gold_prices['adj_close'] = np.where(gold_prices['adj_close'].isna(), np.where(np.isnan(gold_prices['adj_close'].shift(1)), gold_prices['adj_close'].shift(2), gold_prices['adj_close'].shift(1)), gold_prices['adj_close'])
+c = CurrencyRates()
+c.get_rate('USD', 'INR')
 
 # ### SPLITTING THE TRAIN AND THE TEST ####
 # filter_date = str(int(datetime.today().strftime('%Y'))) + '-'  + datetime.today().strftime('%m') + '-' + '01'
