@@ -13,6 +13,7 @@ import numpy as np
 # https://towardsdatascience.com/neural-prophet-a-time-series-modeling-library-based-on-neural-networks-dd02dc8d868d
 # https://medium.com/analytics-vidhya/time-series-forecasting-arima-vs-lstm-vs-prophet-62241c203a3b
 # # https://facebook.github.io/prophet/docs/seasonality,_holiday_effects,_and_regressors.html#modeling-holidays-and-special-events
+# https://forex-python.readthedocs.io/en/latest/usage.html
 
 
 ### CAPTURE CURRENT HOLDINGS IN A LIST ###
@@ -40,6 +41,15 @@ gold_prices = pd.merge(date_object, gold_prices, how="left", on="date").reset_in
 gold_prices['adj_close'] = np.where(gold_prices['adj_close'].isna(), np.where(np.isnan(gold_prices['adj_close'].shift(1)), gold_prices['adj_close'].shift(-1), gold_prices['adj_close'].shift(1)), gold_prices['adj_close'])
 
 gold_prices.rename(columns={"date":"ds", "adj_close":"y"}, inplace=True)
+
+c=CurrencyRates()
+# c.get_rate('USD', 'INR', '2015-01-01')
+
+temp = gold_prices.head()
+temp['ex_rate'] = temp['ds'].apply(lambda x: c.get_rate('USD', 'INR', x)) # This process is very slow. Need to find alternate method
+temp
+ 
+
 
 model = NeuralProphet(growth="linear",  # Determine trend types: 'linear', 'discontinuous', 'off'
                       changepoints=None, # list of dates that may include change points (None -> automatic )
