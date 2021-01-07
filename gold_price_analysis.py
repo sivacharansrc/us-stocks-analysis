@@ -6,6 +6,7 @@ import torch
 import os
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta, date
+from dateutil.relativedelta import relativedelta
 from forex_python.converter import CurrencyRates # https://forex-python.readthedocs.io/en/latest/usage.
 import numpy as np
 
@@ -25,7 +26,70 @@ ticker = "GC=F"
 
 ### PREPARING DATA FOR DAILY AVERAGE ###
 
-start_date = str(int(datetime.today().strftime('%Y')) - 5) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')  # Pulling 10 Years of data
+if os.path.exists("./us-stocks-analysis/input/exchange_rate.csv"):
+    # Read local file if already exists
+    exchange_price_history = pd.read_csv("./us-stocks-analysis/input/exchange_rate.csv")
+    exchange_price_history['date'] = pd.to_datetime(exchange_price_history.date, format="%m/%d/%Y")
+    start_date = datetime.today() - relativedelta(years=10)
+    exchange_price_history = exchange_price_history[exchange_price_history.date > start_date]
+    
+    # Updating the exchange rate until the current date
+    max_date = exchange_price_history.date.max() 
+    
+    if max_date < datetime.today():
+        start_date = max_date + timedelta(days=1)
+        end_date = date.today()
+        date_object = pd.date_range(start=start_date, end=end_date)
+        df = pd.DataFrame(date_object, columns='date')
+        
+        # Getting the exchange rates for new dates
+        c = CurrencyRates()
+        df['exchange_rate'] = df['date'].apply(lambda x: c.get_rate('USD', 'INR', x))
+        exchange_price_history = pd.concat([exchange_price_history, df]).reset_index()
+        exchange_price_history.to_csv("./us-stocks-analysis/input/exchange_rate.csv", index=False)
+        
+        # Merging the existing dataset with the new dates and saving to local drive
+else:
+    start_date = str(int(datetime.today().strftime('%Y')) - 10) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')  # Pulling 10 Years of data
+    date_object = pd.date_range(start=start_date,end=datetime.today())
+    exchange_price_history = pd.DataFrame(date_object, columns=['date'])
+    c=CurrencyRates()
+    exchange_price_history['exchange_rate'] = exchange_price_history['date'].apply(lambda x: c.get_rate('USD', 'INR', x))
+    exchange_price_history.to_csv("./us-stocks-analysis/input/exchange_rate.csv", index=False)
+
+
+# datetime.strptime(max_date, "%Y-%m-%d")
+
+# current_date = datetime.today()
+# if max_date < datetime.today():
+#     print('Yes')
+ 
+# exchange_price_history.head()   
+    
+    
+    # start_date = max_date + timedelta(days=1)
+    # end_date = date.today()
+    # date_object = pd.date_range(start=start_date, end=end_date)
+    # df = pd.DataFrame(date_object, columns='date')
+    
+    # # Getting the exchange rates for new dates
+    # c = CurrencyRates()
+    # df['exchange_rate'] = df['date'].apply(lambda x: c.get_rate('USD', 'INR', x))
+    # exchange_price_history = pd.concat([exchange_price_history, df]).reset_index()
+    # exchange_price_history.to_csv("./us-stocks-analysis/input/exchange_rate.csv", index=False)
+
+exchange_price_history.head()
+
+
+start_date = str(int(datetime.today().strftime('%Y')) - 10) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')  # Pulling 10 Years of data
+date_object = pd.date_range(start=start_date,end=datetime.today())
+df = pd.DataFrame(date_object, columns=['date'])
+
+
+
+
+
+
 gold_prices = yf.download(ticker, start=start_date, interval="1d")
 gold_prices = gold_prices.reset_index()
 col_names = ['date', 'adj_close', 'close', 'high', 'low', 'open', 'volume']
@@ -45,7 +109,7 @@ gold_prices.rename(columns={"date":"ds", "adj_close":"y"}, inplace=True)
 c=CurrencyRates()
 # c.get_rate('USD', 'INR', '2015-01-01')
 
-temp = gold_prices.head()
+temp = gold_prices.head().copy()
 temp['ex_rate'] = temp['ds'].apply(lambda x: c.get_rate('USD', 'INR', x)) # This process is very slow. Need to find alternate method
 temp
  
