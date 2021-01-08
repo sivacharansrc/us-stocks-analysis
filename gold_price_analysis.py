@@ -30,7 +30,7 @@ if os.path.exists("./us-stocks-analysis/input/exchange_rate.csv"):
     # Read local file if already exists
     exchange_price_history = pd.read_csv("./us-stocks-analysis/input/exchange_rate.csv")
     exchange_price_history['date'] = pd.to_datetime(exchange_price_history.date, format="%m/%d/%Y")
-    start_date = datetime.today() - relativedelta(years=10)
+    start_date = date.today() - relativedelta(years=10)
     exchange_price_history = exchange_price_history[exchange_price_history.date > start_date]
     
     # Updating the exchange rate until the current date
@@ -40,12 +40,12 @@ if os.path.exists("./us-stocks-analysis/input/exchange_rate.csv"):
         start_date = max_date + timedelta(days=1)
         end_date = date.today()
         date_object = pd.date_range(start=start_date, end=end_date)
-        df = pd.DataFrame(date_object, columns='date')
+        df = pd.DataFrame(date_object, columns=['date'])
         
         # Getting the exchange rates for new dates
         c = CurrencyRates()
         df['exchange_rate'] = df['date'].apply(lambda x: c.get_rate('USD', 'INR', x))
-        exchange_price_history = pd.concat([exchange_price_history, df]).reset_index()
+        exchange_price_history = pd.concat([exchange_price_history, df]).reset_index(drop=True)
         exchange_price_history.to_csv("./us-stocks-analysis/input/exchange_rate.csv", index=False)
         
         # Merging the existing dataset with the new dates and saving to local drive
@@ -57,61 +57,32 @@ else:
     exchange_price_history['exchange_rate'] = exchange_price_history['date'].apply(lambda x: c.get_rate('USD', 'INR', x))
     exchange_price_history.to_csv("./us-stocks-analysis/input/exchange_rate.csv", index=False)
 
+exchange_price_history.tail()   
 
-# datetime.strptime(max_date, "%Y-%m-%d")
-
-# current_date = datetime.today()
-# if max_date < datetime.today():
-#     print('Yes')
- 
-# exchange_price_history.head()   
-    
-    
-    # start_date = max_date + timedelta(days=1)
-    # end_date = date.today()
-    # date_object = pd.date_range(start=start_date, end=end_date)
-    # df = pd.DataFrame(date_object, columns='date')
-    
-    # # Getting the exchange rates for new dates
-    # c = CurrencyRates()
-    # df['exchange_rate'] = df['date'].apply(lambda x: c.get_rate('USD', 'INR', x))
-    # exchange_price_history = pd.concat([exchange_price_history, df]).reset_index()
-    # exchange_price_history.to_csv("./us-stocks-analysis/input/exchange_rate.csv", index=False)
-
-exchange_price_history.head()
-
-
-start_date = str(int(datetime.today().strftime('%Y')) - 10) + '-'  + datetime.today().strftime('%m') + '-' + datetime.today().strftime('%d')  # Pulling 10 Years of data
-date_object = pd.date_range(start=start_date,end=datetime.today())
-df = pd.DataFrame(date_object, columns=['date'])
-
-
-
-
-
-
+start_date = date.today() - relativedelta(years=10)
 gold_prices = yf.download(ticker, start=start_date, interval="1d")
 gold_prices = gold_prices.reset_index()
 col_names = ['date', 'adj_close', 'close', 'high', 'low', 'open', 'volume']
 gold_prices.columns = col_names
 gold_prices = gold_prices.sort_values(by=['date'], axis=0, ascending=True, kind='mergesort').reset_index(drop=True) #mergesort works better on pre-sorted items. For most other cases, quicksort works good
-
 gold_prices = gold_prices[['date', 'adj_close']].reset_index(drop=True)
 
+gold_prices.to_csv("./us-stocks-analysis/input/gold_price_history.csv", index=False)
 
-date_object = pd.date_range(start=start_date,end=datetime.today())
-date_object = pd.DataFrame(date_object, columns=['date']) 
-gold_prices = pd.merge(date_object, gold_prices, how="left", on="date").reset_index(drop=True)
-gold_prices['adj_close'] = np.where(gold_prices['adj_close'].isna(), np.where(np.isnan(gold_prices['adj_close'].shift(1)), gold_prices['adj_close'].shift(-1), gold_prices['adj_close'].shift(1)), gold_prices['adj_close'])
+gold_prices.adj_close.interpolate(method='nearest', inplace=True) # Fill missing values using the nearest value in either direction
+gold_prices['adj_close'] = gold_prices['adj_close'] / 28.3495 # Converting cost of 1 oz to gms 
 
-gold_prices.rename(columns={"date":"ds", "adj_close":"y"}, inplace=True)
+# Merging gold dataset with exchange rates for INR conversion
 
-c=CurrencyRates()
-# c.get_rate('USD', 'INR', '2015-01-01')
+df = pd.merge(gold_prices, exchange_price_history, how='left', on='date').reset_index(drop=True)
+df.isnull().sum()
+df.head()
+df.exchange_rate.interpolate(method='nearest', inplace=True) # Ideally no interpolate should be used. Check the occurence of NA
+df['y'] = df.adj_close * df.exchange_rate
+df.rename(columns={"date":"ds"}, inplace=True)
 
-temp = gold_prices.head().copy()
-temp['ex_rate'] = temp['ds'].apply(lambda x: c.get_rate('USD', 'INR', x)) # This process is very slow. Need to find alternate method
-temp
+df = df[['ds', 'y']]
+model = NeuralProphet()
  
 
 
@@ -139,8 +110,8 @@ model = NeuralProphet(growth="linear",  # Determine trend types: 'linear', 'disc
                       log_level=None, # Determines the logging level of the logger object
 )
 
-metrics = model.fit(gold_prices, validate_each_epoch=True, freq="D") 
-future = model.make_future_dataframe(gold_prices, periods=365, n_historic_predictions=len(gold_prices)) 
+metrics = model.fit(df, validate_each_epoch=True, freq="D") 
+future = model.make_future_dataframe(df, periods=365, n_historic_predictions=len(df)) 
 forecast = model.predict(future)
 
 fig, ax = plt.subplots(figsize=(14, 10))
@@ -148,10 +119,8 @@ model.plot(forecast, xlabel="Date", ylabel="Gold Price", ax=ax)
 ax.set_title("Gold Price Predictions", fontsize=28, fontweight="bold")
 plt.show()
 
-forecast[(forecast.ds > '2021-01-05') & (forecast.ds < '2021-01-12')]
+forecast[(forecast.ds > '2021-01-07') & (forecast.ds < '2021-01-12')]
 
-c = CurrencyRates()
-c.get_rate('USD', 'INR')
 
 # ### SPLITTING THE TRAIN AND THE TEST ####
 # filter_date = str(int(datetime.today().strftime('%Y'))) + '-'  + datetime.today().strftime('%m') + '-' + '01'
