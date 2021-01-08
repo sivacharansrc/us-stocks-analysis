@@ -1,14 +1,14 @@
 ### INITIALIZING THE REQUIRED LIBRARIES
 import yfinance as yf
 import pandas as pd
-from neuralprophet import NeuralProphet
-import torch
 import os
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta, date
 from dateutil.relativedelta import relativedelta
 from forex_python.converter import CurrencyRates # https://forex-python.readthedocs.io/en/latest/usage.
 import numpy as np
+from neuralprophet import NeuralProphet
+import torch
 
 ### OTHER REFERENCES ###
 # https://towardsdatascience.com/neural-prophet-a-time-series-modeling-library-based-on-neural-networks-dd02dc8d868d
@@ -29,14 +29,22 @@ ticker = "GC=F"
 if os.path.exists("./us-stocks-analysis/input/exchange_rate.csv"):
     # Read local file if already exists
     exchange_price_history = pd.read_csv("./us-stocks-analysis/input/exchange_rate.csv")
-    exchange_price_history['date'] = pd.to_datetime(exchange_price_history.date, format="%m/%d/%Y")
-    start_date = date.today() - relativedelta(years=10)
-    exchange_price_history = exchange_price_history[exchange_price_history.date > start_date]
+    try:
+        exchange_price_history['date'] = pd.to_datetime(exchange_price_history.date, format="%m/%d/%Y")
+        print("Format successfully changed")
+    except:
+        exchange_price_history['date'] = pd.to_datetime(exchange_price_history.date, format="%Y-%m-%d")
+        print("Type changed from string to date")
+    
+    start_date = str((date.today() - relativedelta(years=10)))
+    end_date = str((date.today() - relativedelta(days=5)))
+    print("The start date is:", start_date, ", and the end date is:", end_date)
+    exchange_price_history = exchange_price_history[(exchange_price_history.date > start_date) & (exchange_price_history.date <= end_date)]
     
     # Updating the exchange rate until the current date
     max_date = exchange_price_history.date.max() 
     
-    if max_date < datetime.today():
+    if max_date < date.today():
         start_date = max_date + timedelta(days=1)
         end_date = date.today()
         date_object = pd.date_range(start=start_date, end=end_date)
@@ -69,15 +77,17 @@ gold_prices = gold_prices[['date', 'adj_close']].reset_index(drop=True)
 
 gold_prices.to_csv("./us-stocks-analysis/input/gold_price_history.csv", index=False)
 
-gold_prices.adj_close.interpolate(method='nearest', inplace=True) # Fill missing values using the nearest value in either direction
 gold_prices['adj_close'] = gold_prices['adj_close'] / 28.3495 # Converting cost of 1 oz to gms 
 
 # Merging gold dataset with exchange rates for INR conversion
 
-df = pd.merge(gold_prices, exchange_price_history, how='left', on='date').reset_index(drop=True)
+df = pd.merge(gold_prices, exchange_price_history, how='right', on='date').reset_index(drop=True)
 df.isnull().sum()
-df.head()
-df.exchange_rate.interpolate(method='nearest', inplace=True) # Ideally no interpolate should be used. Check the occurence of NA
+df.tail(10)
+df.head(10)
+df.adj_close.interpolate(method='nearest', inplace=True) # Ideally no interpolate should be used. Check the occurence of NA
+df.dropna(axis=0, inplace=True) # Incase the first row is Null, it will not get fixed by interpolate and hence removing such scenarios
+
 df['y'] = df.adj_close * df.exchange_rate
 df.rename(columns={"date":"ds"}, inplace=True)
 
