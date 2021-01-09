@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, date
 from dateutil.relativedelta import relativedelta
 from forex_python.converter import CurrencyRates # https://forex-python.readthedocs.io/en/latest/usage.
 import numpy as np
-from neuralprophet import NeuralProphet
+from neuralprophet  import NeuralProphet
 import torch
 
 ### OTHER REFERENCES ###
