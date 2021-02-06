@@ -225,8 +225,8 @@ current_year_month_filter = str(int(datetime.today().strftime('%Y'))) + str(int(
 current_dt = date(int(datetime.today().strftime('%Y')), int(datetime.today().strftime('%m')), 1)
 
 month1_filter = np.array([int((current_dt - relativedelta(months=3)).strftime('%m')), int((current_dt - relativedelta(months=6)).strftime('%m')), int((current_dt - relativedelta(months=9)).strftime('%m')), int((current_dt - relativedelta(months=12)).strftime('%m'))])
-month2_filter = month1_filter + 1
-month3_filter = month1_filter + 2
+month2_filter = np.array([int((current_dt - relativedelta(months=2)).strftime('%m')), int((current_dt - relativedelta(months=5)).strftime('%m')), int((current_dt - relativedelta(months=8)).strftime('%m')), int((current_dt - relativedelta(months=11)).strftime('%m'))])
+month3_filter = np.array([int((current_dt - relativedelta(months=1)).strftime('%m')), int((current_dt - relativedelta(months=4)).strftime('%m')), int((current_dt - relativedelta(months=7)).strftime('%m')), int((current_dt - relativedelta(months=10)).strftime('%m'))])
 
 # FIXING THE WEIGHTS FOR THE MONTHS
 wt_3 = 2
